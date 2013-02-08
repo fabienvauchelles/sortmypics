@@ -664,7 +664,10 @@ public class FilesControllerDAO
             {
                 if ( dirExifSubIF.containsTag( ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL ) )
                 {
-                    mf.setCreated( dirExifSubIF.getDate( ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL ) );
+                    if ( !"0000:00:00 00:00:00".equals( dirExifSubIF.getDescription( ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL ) ) )
+                    {
+                        mf.setCreated( dirExifSubIF.getDate( ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL ) );
+                    }
                 }
             }
 
