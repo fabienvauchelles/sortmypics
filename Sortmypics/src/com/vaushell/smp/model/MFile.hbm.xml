@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+<hibernate-mapping>
+    <class name="com.vaushell.smp.model.MFile" table="MFILE">
+        <id name="md5hash" type="string">
+            <column length="32" name="F_MD5HASH"/>
+            <generator class="assigned"/>
+        </id>
+        <many-to-one class="com.vaushell.smp.model.MGroup" fetch="select" name="group">
+            <column length="36" name="F_G_ID"/>
+        </many-to-one>
+        <property name="name" type="string">
+            <column length="512" name="F_NAME" not-null="true"/>
+        </property>
+        <property name="extension" type="string">
+            <column length="64" name="F_EXTENSION" not-null="true"/>
+        </property>
+        <property name="path" type="string">
+            <column length="2048" name="F_PATH" not-null="true"/>
+        </property>
+        <property name="size" type="long">
+            <column name="F_SIZE" not-null="true"/>
+        </property>
+        <property name="type" type="short">
+            <column name="F_TYPE" not-null="true"/>
+        </property>
+        <property name="created" type="timestamp">
+            <column length="23" name="F_CREATED" not-null="true"/>
+        </property>
+        <property name="added" type="timestamp">
+            <column length="23" name="F_ADDED" not-null="true"/>
+        </property>
+        <property name="latitude" type="java.lang.Double">
+            <column name="F_LAT" precision="17" scale="0"/>
+        </property>
+        <property name="longitude" type="java.lang.Double">
+            <column name="F_LNG" precision="17" scale="0"/>
+        </property>
+        <many-to-one class="com.vaushell.smp.model.MPlace" fetch="select" name="place">
+            <column length="32" name="F_P_ID"/>
+        </many-to-one>
+        <property name="camera" type="string">
+            <column length="512" name="F_CAMERA"/>
+        </property>
+    </class>
+</hibernate-mapping>

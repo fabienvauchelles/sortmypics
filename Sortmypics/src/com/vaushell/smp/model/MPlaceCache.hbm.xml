@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+<hibernate-mapping>
+    <class name="com.vaushell.smp.model.MPlaceCache" table="MPLACE_CACHE">
+        <id name="ID" type="string">
+            <column length="36" name="PC_ID"/>
+            <generator class="assigned"/>
+        </id>
+        <property name="location" type="string">
+            <column length="512" name="PC_LOCATION" not-null="true"/>
+        </property>
+        <property name="latitude" type="java.lang.Double">
+            <column name="PC_LAT" precision="17" scale="0"/>
+        </property>
+        <property name="longitude" type="java.lang.Double">
+            <column name="PC_LNG" precision="17" scale="0"/>
+        </property>
+    </class>
+</hibernate-mapping>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+<hibernate-mapping>
+    <class name="com.vaushell.smp.model.MGroup" table="MGROUP">
+        <id name="ID" type="string">
+            <column length="36" name="G_ID"/>
+            <generator class="assigned"/>
+        </id>
+        <many-to-one class="com.vaushell.smp.model.MFile" fetch="select" name="min">
+            <column length="32" name="G_MIN"/>
+        </many-to-one>
+        <many-to-one class="com.vaushell.smp.model.MFile" fetch="select" name="max">
+            <column length="32" name="G_MAX"/>
+        </many-to-one>
+        <property name="date" type="date">
+            <column length="8" name="G_DATE" not-null="true"/>
+        </property>
+        <many-to-one class="com.vaushell.smp.model.MPlace" fetch="select" name="place">
+            <column length="32" name="G_P_ID"/>
+        </many-to-one>
+        <set inverse="true" name="files">
+            <key>
+                <column length="36" name="F_G_ID"/>
+            </key>
+            <one-to-many class="com.vaushell.smp.model.MFile"/>
+        </set>
+    </class>
+</hibernate-mapping>
