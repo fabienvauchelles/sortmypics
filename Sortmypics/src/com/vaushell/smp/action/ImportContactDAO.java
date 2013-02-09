@@ -11,7 +11,6 @@ import com.google.gdata.util.ServiceException;
 import com.vaushell.smp.FilesControllerDAO;
 import com.vaushell.tools.contacts.GContacts;
 import com.vaushell.tools.geo.GeoReverse;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
