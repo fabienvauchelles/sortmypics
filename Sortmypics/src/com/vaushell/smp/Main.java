@@ -7,6 +7,7 @@ package com.vaushell.smp;
 import com.google.gdata.util.ServiceException;
 import com.vaushell.smp.action.ExtractKMLdao;
 import com.vaushell.smp.action.ImportContactDAO;
+import com.vaushell.smp.action.ImportLatitudeDAO;
 import com.vaushell.smp.action.LearnDAO;
 import java.io.File;
 import java.io.IOException;
@@ -101,6 +102,18 @@ public class Main
                                    password );
                 }
             }
+            else if ( order.equalsIgnoreCase( "importlatitude" ) )
+            {
+                if ( args.length != 1 )
+                {
+                    showUsage();
+                }
+                else
+                {
+
+                    importLatitude();
+                }
+            }
             else
             {
                 showUsage();
@@ -118,6 +131,7 @@ public class Main
         System.err.println( "  clean : clean all database" );
         System.err.println( "  extract <kml destination> <round distance in km> : extract all kml data to a file" );
         System.err.println( "  importcontact <username> <password> : import google address books to place" );
+        System.err.println( "  importlatitude : add google latitude position to existing picture" );
     }
 
     private static void learn( File source ,
@@ -226,6 +240,29 @@ public class Main
         {
             logger.error( ex.getMessage() ,
                           ex );
+        }
+        catch( IOException ex )
+        {
+            logger.error( ex.getMessage() ,
+                          ex );
+        }
+    }
+
+    private static void importLatitude()
+    {
+        try
+        {
+            FilesControllerDAO dao = new FilesControllerDAO();
+            dao.setDatabaseFile( new File( "database" ) );
+            dao.setDatabaseFileTemplate( new File( "database-template" ) );
+
+            dao.start();
+
+            ImportLatitudeDAO importDAO = new ImportLatitudeDAO();
+            importDAO.setDAO( dao );
+            importDAO.run();
+
+            dao.stop();
         }
         catch( IOException ex )
         {

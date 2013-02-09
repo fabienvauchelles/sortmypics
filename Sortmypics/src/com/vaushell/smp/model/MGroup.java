@@ -1,6 +1,6 @@
 package com.vaushell.smp.model;
 
-import java.util.Date;
+import java.util.Calendar;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -14,13 +14,13 @@ public class MGroup
     public MGroup( String ID ,
                    MFile min ,
                    MFile max ,
-                   Date date ,
+                   Calendar calendar ,
                    MPlace place )
     {
         this.ID = ID;
         this.min = min;
         this.max = max;
-        this.date = date;
+        this.calendar = calendar;
         this.place = place;
 
         init();
@@ -65,14 +65,14 @@ public class MGroup
         this.max = max;
     }
 
-    public Date getDate()
+    public Calendar getCalendar()
     {
-        return date;
+        return calendar;
     }
 
-    public void setDate( Date date )
+    public void setCalendar( Calendar calendar )
     {
-        this.date = date;
+        this.calendar = calendar;
     }
 
     public MPlace getPlace()
@@ -98,13 +98,13 @@ public class MGroup
     @Override
     public String toString()
     {
-        return "MGroup{" + "ID=" + ID + ", min=" + min + ", max=" + max + ", date=" + date + ", place=" + place + ", files=" + files + '}';
+        return "MGroup{" + "ID=" + ID + ", min=" + min + ", max=" + max + ", calendar=" + calendar + ", place=" + place + ", files=" + files + '}';
     }
     // PRIVATE
     private String ID;
     private MFile min;
     private MFile max;
-    private Date date;
+    private Calendar calendar;
     private MPlace place;
     private Set<MFile> files;
 

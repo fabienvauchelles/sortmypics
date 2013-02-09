@@ -103,7 +103,7 @@ public class GeoReverse
                 }
 
                 is.close();
-                
+
                 try
                 {
                     Thread.sleep( 110 );
@@ -243,6 +243,26 @@ public class GeoReverse
         }
 
         return convert( rz );
+    }
+
+    public static double distance( double lat1 ,
+                                   double lng1 ,
+                                   double lat2 ,
+                                   double lng2 )
+    {
+        double half = Math.PI / 180.0;
+        double lat1half = lat1 * half;
+        double lat2half = lat2 * half;
+        double lng1half = lng1 * half;
+        double lng2half = lng2 * half;
+        double t1 = Math.sin( lat1half ) * Math.sin( lat2half );
+        double t2 = Math.cos( lat1half ) * Math.cos( lat2half );
+        double t3 = Math.cos( lng1half - lng2half );
+        double t4 = t2 * t3;
+        double t5 = t1 + t4;
+        double rad_dist = Math.atan( -t5 / Math.sqrt( -t5 * t5 + 1 ) ) + 2 * Math.atan( 1 );
+
+        return ( rad_dist * 3437.74677 * 1.1508 ) * 1.6093470878864446;
     }
 
     public static class GeoData

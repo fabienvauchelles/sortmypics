@@ -2,6 +2,7 @@ drop table MFILE if exists cascade constraints;
 drop table MGROUP if exists cascade constraints;
 drop table MPLACE if exists cascade constraints;
 drop table MPLACE_CACHE if exists cascade constraints;
+drop table MLATITUDE_CACHE if exists cascade constraints;
 
 create table MFILE
 (
@@ -28,14 +29,14 @@ create table MFILE
 create table MGROUP
 (
     G_ID varchar(36) not null,
-    G_DATE date not null,
+    G_CAL timestamp not null,
     G_P_ID varchar(36) null,
 
     G_MIN varchar(32) null,
     G_MAX varchar(32) null,
 
     primary key (G_ID),
-    unique (G_DATE, G_P_ID)
+    unique (G_CAL, G_P_ID)
 );
 
 create table MPLACE
@@ -56,6 +57,17 @@ create table MPLACE_CACHE
     PC_LNG double not null,
 
     primary key (PC_ID)
+);
+
+create table MLATITUDE_CACHE
+(
+    LT_ID varchar(36) not null,
+    LT_CAL timestamp not null,
+    LT_LAT double null,
+    LT_LNG double null,
+    LT_ACC double null,
+
+    primary key (LT_ID)
 );
 
 alter table MFILE add constraint F_G_ID_FK foreign key (F_G_ID) references MGROUP(G_ID);

@@ -18,5 +18,6 @@
         <mapping resource="com/vaushell/smp/model/MFile.hbm.xml"/>
         <mapping resource="com/vaushell/smp/model/MPlace.hbm.xml"/>
         <mapping resource="com/vaushell/smp/model/MPlaceCache.hbm.xml"/>
+        <mapping resource="com/vaushell/smp/model/MLatitudeCache.hbm.xml"/>
     </session-factory>
 </hibernate-configuration>

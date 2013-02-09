@@ -12,9 +12,11 @@ import com.drew.metadata.exif.ExifIFD0Directory;
 import com.drew.metadata.exif.ExifSubIFDDirectory;
 import com.drew.metadata.exif.GpsDirectory;
 import com.vaushell.smp.model.MFile;
+import com.vaushell.smp.model.MLatitudeCache;
 import com.vaushell.smp.model.MPlace;
 import com.vaushell.smp.model.MPlaceCache;
 import com.vaushell.tools.geo.GeoReverse;
+import com.vaushell.tools.latitude.GLatitude;
 import com.vaushell.tools.md5.MD5tools;
 import com.vaushell.tools.mediainfo.MediaInfoExtract;
 import java.io.File;
@@ -24,7 +26,7 @@ import java.security.NoSuchAlgorithmException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -234,7 +236,7 @@ public class FilesControllerDAO
         mf = new MFile();
         mf.setMd5hash( md5hash );
         mf.setFile( file );
-        mf.setAdded( new Date() );
+        mf.setAdded( Calendar.getInstance() );
 
         switch( mf.getType() )
         {
@@ -296,6 +298,44 @@ public class FilesControllerDAO
         }
     }
 
+    public void update( List<MFile> updated )
+    {
+        if ( updated == null )
+        {
+            throw new NullPointerException();
+        }
+
+        if ( logger.isDebugEnabled() )
+        {
+            logger.debug(
+                    "[FilesControllerDAO] update() : updated.size=" + updated.size() );
+        }
+
+        if ( updated.isEmpty() )
+        {
+            return;
+        }
+
+        factory.getCurrentSession().beginTransaction();
+
+        try
+        {
+            for ( MFile file : updated )
+            {
+                factory.getCurrentSession().update( file );
+            }
+
+            factory.getCurrentSession().flush();
+            factory.getCurrentSession().getTransaction().commit();
+        }
+        catch( RuntimeException th )
+        {
+            factory.getCurrentSession().getTransaction().rollback();
+
+            throw th;
+        }
+    }
+
     public boolean hasStack()
     {
         return tmpFiles.size() > 0;
@@ -317,6 +357,7 @@ public class FilesControllerDAO
             factory.getCurrentSession().createSQLQuery( "DELETE FROM MFILE" ).executeUpdate();
             factory.getCurrentSession().createSQLQuery( "DELETE FROM MPLACE" ).executeUpdate();
             factory.getCurrentSession().createSQLQuery( "DELETE FROM MPLACE_CACHE" ).executeUpdate();
+            factory.getCurrentSession().createSQLQuery( "DELETE FROM MLATITUDE_CACHE" ).executeUpdate();
 
             factory.getCurrentSession().flush();
             factory.getCurrentSession().getTransaction().commit();
@@ -397,12 +438,22 @@ public class FilesControllerDAO
             List<MPlaceCache> places = q.list();
             if ( places.size() > 0 )
             {
+                if ( logger.isDebugEnabled() )
+                {
+                    logger.debug( "[FilesControllerDAO] return cached data" );
+                }
+
                 MPlaceCache place = places.get( 0 );
                 gd = new GeoReverse.GeoData( place.getLatitude() ,
                                              place.getLongitude() );
             }
             else
             {
+                if ( logger.isDebugEnabled() )
+                {
+                    logger.debug( "[FilesControllerDAO] request google map" );
+                }
+
                 gd = GeoReverse.getInstance().convertAddressToGeo( address );
                 if ( gd != null )
                 {
@@ -472,11 +523,21 @@ public class FilesControllerDAO
             List<MPlaceCache> places = q.list();
             if ( places.size() > 0 )
             {
+                if ( logger.isDebugEnabled() )
+                {
+                    logger.debug( "[FilesControllerDAO] return cached data" );
+                }
+
                 MPlaceCache place = places.get( 0 );
                 location = place.getLocation();
             }
             else
             {
+                if ( logger.isDebugEnabled() )
+                {
+                    logger.debug( "[FilesControllerDAO] request google map" );
+                }
+
                 location = GeoReverse.getInstance().convertGeoToAddress( gd );
                 if ( location != null )
                 {
@@ -505,6 +566,162 @@ public class FilesControllerDAO
             factory.getCurrentSession().getTransaction().rollback();
 
             throw ex;
+        }
+        catch( RuntimeException th )
+        {
+            factory.getCurrentSession().getTransaction().rollback();
+
+            throw th;
+        }
+    }
+
+    public List<GLatitude.GLocation> getAllLocations( Calendar minCal )
+            throws IOException
+    {
+        if ( minCal == null )
+        {
+            throw new NullPointerException();
+        }
+
+        if ( logger.isDebugEnabled() )
+        {
+            logger.
+                    debug(
+                    "[FilesControllerDAO] getAllLocations() : minCal=" + minCal );
+        }
+
+        factory.getCurrentSession().beginTransaction();
+
+        try
+        {
+            // Create bound
+            Calendar maxCal = (Calendar) minCal.clone();
+            maxCal.add( Calendar.MINUTE ,
+                        GLatitude.MINMAX_DURATION_IN_MINUTES );
+
+            Query qML = factory.getCurrentSession().createQuery(
+                    "select l from MLatitudeCache l where l.calendar>=:mincal and l.calendar<:maxcal" );
+            qML.setCalendar( "mincal" ,
+                             minCal );
+            qML.setCalendar( "maxcal" ,
+                             maxCal );
+            List<MLatitudeCache> mls = qML.list();
+
+            List<GLatitude.GLocation> locations;
+            if ( mls.size() > 0 )
+            {
+                if ( logger.isDebugEnabled() )
+                {
+                    logger.debug( "[FilesControllerDAO] return cached data" );
+                }
+
+                locations = new ArrayList<GLatitude.GLocation>();
+
+                for ( MLatitudeCache ml : mls )
+                {
+                    if ( ml.getLatitude() != null && ml.getLongitude() != null )
+                    {
+                        locations.add( new GLatitude.GLocation( ml.getLatitude() ,
+                                                                ml.getLongitude() ,
+                                                                ml.getAccuracy() ,
+                                                                ml.getCalendar() ) );
+                    }
+                }
+            }
+            else
+            {
+                if ( logger.isDebugEnabled() )
+                {
+                    logger.debug( "[FilesControllerDAO] request google latitude" );
+                }
+
+                locations = GLatitude.getInstance().getAllLocations( null ,
+                                                                     minCal ,
+                                                                     maxCal );
+
+                if ( locations.size() > 0 )
+                {
+                    for ( GLatitude.GLocation location : locations )
+                    {
+                        Query qMLadd = factory.getCurrentSession().createQuery(
+                                "select count(l) from MLatitudeCache l where l.calendar=:calendar" );
+                        qMLadd.setCalendar( "calendar" ,
+                                            location.getCalendar() );
+                        Long count = (Long) qMLadd.uniqueResult();
+                        if ( count <= 0 )
+                        {
+                            factory.getCurrentSession().save( new MLatitudeCache( UUID.randomUUID().toString() ,
+                                                                                  location.getCalendar() ,
+                                                                                  location.getLatitude() ,
+                                                                                  location.getLongitude() ,
+                                                                                  location.getAccuracy() ) );
+                        }
+                    }
+                }
+                else
+                {
+                    factory.getCurrentSession().save( new MLatitudeCache( UUID.randomUUID().toString() ,
+                                                                          minCal ,
+                                                                          null ,
+                                                                          null ,
+                                                                          null ) );
+
+                    factory.getCurrentSession().save( new MLatitudeCache( UUID.randomUUID().toString() ,
+                                                                          maxCal ,
+                                                                          null ,
+                                                                          null ,
+                                                                          null ) );
+                }
+            }
+
+            factory.getCurrentSession().flush();
+            factory.getCurrentSession().getTransaction().commit();
+
+            return locations;
+        }
+        catch( IOException ex )
+        {
+            factory.getCurrentSession().getTransaction().rollback();
+
+            throw ex;
+        }
+        catch( RuntimeException th )
+        {
+            factory.getCurrentSession().getTransaction().rollback();
+
+            throw th;
+        }
+    }
+
+    public List<MFile> getAllFilesByCalendar()
+    {
+        if ( logger.isDebugEnabled() )
+        {
+            logger.debug(
+                    "[FilesControllerDAO] getAllFilesByCalendar()" );
+        }
+
+        factory.getCurrentSession().beginTransaction();
+
+        try
+        {
+
+            Query q = factory.getCurrentSession().createQuery(
+                    "select f from MFile f order by f.created" );
+
+            List<MFile> files = q.list();
+
+            factory.getCurrentSession().flush();
+            factory.getCurrentSession().getTransaction().commit();
+
+            return files;
+        }
+        catch( NonUniqueResultException ex )
+        {
+            factory.getCurrentSession().flush();
+            factory.getCurrentSession().getTransaction().commit();
+
+            return null;
         }
         catch( RuntimeException th )
         {
@@ -666,7 +883,9 @@ public class FilesControllerDAO
                 {
                     if ( !"0000:00:00 00:00:00".equals( dirExifSubIF.getDescription( ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL ) ) )
                     {
-                        mf.setCreated( dirExifSubIF.getDate( ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL ) );
+                        Calendar cal = Calendar.getInstance();
+                        cal.setTime( dirExifSubIF.getDate( ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL ) );
+                        mf.setCreated( cal );
                     }
                 }
             }
@@ -752,10 +971,10 @@ public class FilesControllerDAO
             }
         }
 
-        Date date = parse( dateStr );
-        if ( date != null )
+        Calendar cal = parse( dateStr );
+        if ( cal != null )
         {
-            mf.setCreated( date );
+            mf.setCreated( cal );
         }
     }
 
@@ -814,13 +1033,14 @@ public class FilesControllerDAO
         }
     }
 
-    private static Date parse( String dateStr )
+    private static Calendar parse( String dateStr )
     {
         if ( dateStr == null )
         {
             return null;
         }
 
+        Calendar cal = Calendar.getInstance();
         SimpleDateFormat df = new SimpleDateFormat( "yyyy-MM-dd HH:mm:ss" );
 
         int ind = dateStr.indexOf( "UTC " );
@@ -828,7 +1048,9 @@ public class FilesControllerDAO
         String rDateStr;
         if ( ind >= 0 )
         {
-            df.setTimeZone( TimeZone.getTimeZone( "UTC" ) );
+            TimeZone tz = TimeZone.getTimeZone( "UTC" );
+            df.setTimeZone( tz );
+            cal.setTimeZone( tz );
 
             rDateStr = dateStr.substring( 4 );
         }
@@ -839,7 +1061,8 @@ public class FilesControllerDAO
 
         try
         {
-            return df.parse( rDateStr );
+            cal.setTime( df.parse( rDateStr ) );
+            return cal;
         }
         catch( ParseException ex )
         {

@@ -6,6 +6,7 @@ package com.vaushell.smp.action;
 
 import com.vaushell.smp.FilesControllerDAO;
 import com.vaushell.smp.model.MFile;
+import com.vaushell.tools.geo.GeoReverse;
 import de.micromata.opengis.kml.v_2_2_0.Document;
 import de.micromata.opengis.kml.v_2_2_0.Folder;
 import de.micromata.opengis.kml.v_2_2_0.Kml;
@@ -74,8 +75,11 @@ public class ExtractKMLdao
             {
                 for ( MFile groupLocation : group.files )
                 {
-                    Double distance = groupLocation.distance( location );
-                    if ( distance != null && distance.compareTo( roundDistance ) <= 0 )
+                    double distance = GeoReverse.distance( groupLocation.getLatitude() ,
+                                                           groupLocation.getLongitude() ,
+                                                           location.getLatitude() ,
+                                                           location.getLongitude() );
+                    if ( distance <= roundDistance )
                     {
                         groupToMerge.add( group );
                         break;

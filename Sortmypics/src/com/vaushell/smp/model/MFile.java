@@ -1,7 +1,7 @@
 package com.vaushell.smp.model;
 
 import java.io.File;
-import java.util.Date;
+import java.util.Calendar;
 import org.apache.commons.io.FilenameUtils;
 
 /**
@@ -22,8 +22,8 @@ public class MFile
                   String path ,
                   long size ,
                   short type ,
-                  Date created ,
-                  Date added ,
+                  Calendar created ,
+                  Calendar added ,
                   Double latitude ,
                   Double longitude ,
                   MPlace place ,
@@ -135,22 +135,22 @@ public class MFile
         this.type = type;
     }
 
-    public Date getCreated()
+    public Calendar getCreated()
     {
         return created;
     }
 
-    public void setCreated( Date created )
+    public void setCreated( Calendar created )
     {
         this.created = created;
     }
 
-    public Date getAdded()
+    public Calendar getAdded()
     {
         return added;
     }
 
-    public void setAdded( Date added )
+    public void setAdded( Calendar added )
     {
         this.added = added;
     }
@@ -232,36 +232,6 @@ public class MFile
         return "MFile{" + "md5hash=" + md5hash + ", group=" + group + ", name=" + name + ", extension=" + extension + ", path=" + path + ", size=" + size + ", type=" + type + ", created=" + created + ", added=" + added + ", latitude=" + latitude + ", longitude=" + longitude + ", place=" + place + ", camera=" + camera + '}';
     }
 
-    public Double distance( MFile b )
-    {
-        return distance( this ,
-                         b );
-    }
-
-    public static Double distance( MFile a ,
-                                   MFile b )
-    {
-        if ( a == null || a.getLatitude() == null || a.getLongitude() == null || b == null || b.getLatitude() == null || b.
-                getLongitude() == null )
-        {
-            return null;
-
-        }
-        double half = Math.PI / 180.0;
-        double lat1 = a.getLatitude() * half;
-        double lat2 = b.getLatitude() * half;
-        double lon1 = a.getLongitude() * half;
-        double lon2 = b.getLongitude() * half;
-        double t1 = Math.sin( lat1 ) * Math.sin( lat2 );
-        double t2 = Math.cos( lat1 ) * Math.cos( lat2 );
-        double t3 = Math.cos( lon1 - lon2 );
-        double t4 = t2 * t3;
-        double t5 = t1 + t4;
-        double rad_dist = Math.atan( -t5 / Math.sqrt( -t5 * t5 + 1 ) ) + 2 * Math.atan( 1 );
-
-        return ( rad_dist * 3437.74677 * 1.1508 ) * 1.6093470878864446;
-    }
-
     public static short getFiletype( String extension )
     {
         if ( extension == null || extension.length() <= 0 )
@@ -301,8 +271,8 @@ public class MFile
     private String path;
     private long size;
     private short type;
-    private Date created;
-    private Date added;
+    private Calendar created;
+    private Calendar added;
     private Double latitude;
     private Double longitude;
     private MPlace place;

@@ -24,10 +24,10 @@
         <property name="type" type="short">
             <column name="F_TYPE" not-null="true"/>
         </property>
-        <property name="created" type="timestamp">
+        <property name="created" type="calendar">
             <column length="23" name="F_CREATED" not-null="true"/>
         </property>
-        <property name="added" type="timestamp">
+        <property name="added" type="calendar">
             <column length="23" name="F_ADDED" not-null="true"/>
         </property>
         <property name="latitude" type="java.lang.Double">
