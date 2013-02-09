@@ -5,11 +5,12 @@
 package com.vaushell.smp.action;
 
 import com.vaushell.smp.FilesControllerDAO;
-import com.vaushell.smp.model.MFile;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,7 +53,42 @@ public class LearnDAO
 
         dao.clear();
 
-        processRecursively( sourceDirectory );
+        // Find all files
+        if ( logger.isDebugEnabled() )
+        {
+            logger.debug( "[LearnDAO] Find all files" );
+        }
+
+        files.clear();
+        findRecursively( sourceDirectory );
+
+        if ( logger.isDebugEnabled() )
+        {
+            logger.debug( "[LearnDAO] found " + files.size() + " files" );
+        }
+
+        // Process all files
+        int count = 1;
+        for ( File f : files )
+        {
+            try
+            {
+                if ( logger.isDebugEnabled() )
+                {
+                    logger.debug( "[LearnDAO] Process file " + count + "/" + files.size() + " '" + f.getAbsolutePath() + "'" );
+                }
+
+                dao.createFileIfNecessary( f ,
+                                           update );
+
+                count++;
+            }
+            catch( IOException ex )
+            {
+                logger.error( ex.getMessage() ,
+                              ex );
+            }
+        }
 
         if ( dao.hasStack() )
         {
@@ -67,42 +103,34 @@ public class LearnDAO
     private FilesControllerDAO dao;
     private File sourceDirectory;
     private boolean update;
+    private List<File> files;
 
     private void init()
     {
         this.dao = null;
         this.sourceDirectory = null;
         this.update = false;
+        this.files = new ArrayList<File>();
     }
 
-    private void processRecursively( File f )
+    private void findRecursively( File f )
             throws NoSuchAlgorithmException
     {
         if ( f.isDirectory() )
         {
-            logger.info( "Process directory '" + f.getAbsolutePath() + "'" );
+            if ( logger.isDebugEnabled() )
+            {
+                logger.debug( "[LearnDAO] Found directory '" + f.getAbsolutePath() + "'" );
+            }
+
             for ( File child : f.listFiles() )
             {
-                processRecursively( child );
+                findRecursively( child );
             }
         }
         else
         {
-            if ( logger.isDebugEnabled() )
-            {
-                logger.debug( "  File '" + f.getName() + "'" );
-            }
-
-            try
-            {
-                dao.createFileIfNecessary( f ,
-                                           update );
-            }
-            catch( IOException ex )
-            {
-                logger.error( ex.getMessage() ,
-                              ex );
-            }
+            files.add( f );
         }
     }
 }
