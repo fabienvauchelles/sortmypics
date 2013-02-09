@@ -49,6 +49,8 @@ import org.slf4j.LoggerFactory;
 public class FilesControllerDAO
 {
     // PUBLIC
+    public final static double NEAR_IN_KM = 0.050;
+
     public FilesControllerDAO()
     {
         init();
@@ -722,6 +724,64 @@ public class FilesControllerDAO
             factory.getCurrentSession().getTransaction().commit();
 
             return null;
+        }
+        catch( RuntimeException th )
+        {
+            factory.getCurrentSession().getTransaction().rollback();
+
+            throw th;
+        }
+    }
+
+    public void matchPlaces()
+    {
+        if ( logger.isDebugEnabled() )
+        {
+            logger.debug(
+                    "[FilesControllerDAO] matchPlace()" );
+        }
+
+        factory.getCurrentSession().beginTransaction();
+
+        try
+        {
+            Query qPlaces = factory.getCurrentSession().createQuery( "from MPlace p" );
+            List<MPlace> places = qPlaces.list();
+
+            Query qFiles = factory.getCurrentSession().createQuery( 
+                    "from MFile f where f.place is null and f.latitude is not null and f.longitude is not null" );
+            List<MFile> files = qFiles.list();
+
+            for ( MFile file : files )
+            {
+                MPlace best = null;
+                double bestDistance = Double.MAX_VALUE;
+
+                for ( MPlace place : places )
+                {
+                    double distance = GeoReverse.distance( place.getLatitude() ,
+                                                           place.getLongitude() ,
+                                                           file.getLatitude() ,
+                                                           file.getLongitude() );
+                    if ( distance <= NEAR_IN_KM )
+                    {
+                        if ( distance < bestDistance )
+                        {
+                            best = place;
+                            bestDistance = distance;
+                        }
+                    }
+                }
+
+                if ( best != null )
+                {
+                    file.setPlace( best );
+                    factory.getCurrentSession().save( best );
+                }
+            }
+
+            factory.getCurrentSession().flush();
+            factory.getCurrentSession().getTransaction().commit();
         }
         catch( RuntimeException th )
         {

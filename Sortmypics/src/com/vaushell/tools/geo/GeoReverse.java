@@ -245,6 +245,14 @@ public class GeoReverse
         return convert( rz );
     }
 
+    /**
+     * 
+     * @param lat1
+     * @param lng1
+     * @param lat2
+     * @param lng2
+     * @return in km
+     */
     public static double distance( double lat1 ,
                                    double lng1 ,
                                    double lat2 ,

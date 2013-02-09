@@ -147,6 +147,13 @@ public class ImportContactDAO
                                         place.latitude ,
                                         place.longitude );
         }
+        
+        if ( logger.isDebugEnabled() )
+        {
+            logger.debug( "[ImportContactDAO] match with elements" );
+        }
+        
+        dao.matchPlaces();
 
         logger.info( "[ImportContactDAO] end" );
     }
