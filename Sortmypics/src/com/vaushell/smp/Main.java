@@ -128,10 +128,11 @@ public class Main
         System.err.println( "usage: Sortmypics" );
         System.err.println(
                 "  learn <source directory> [update] : parse directory for information (update if new files are added)" );
-        System.err.println( "  clean : clean all database" );
-        System.err.println( "  extract <kml destination> <round distance in km> : extract all kml data to a file" );
-        System.err.println( "  importcontact <username> <password> : import google address books to place" );
-        System.err.println( "  importlatitude : add google latitude position to existing picture" );
+        System.err.println( "  1. clean : clean all database" );
+        System.err.println( "  2. importlatitude : add google latitude position to existing picture" );
+        System.err.println( "  3. importcontact <username> <password> : import google address books to place" );
+        System.err.println( "  4. regroup <round distance in meters> : regroup position for unassociated place" );
+        System.err.println( "  (optional) extract <kml destination> <round distance in meters> : extract all kml data to a file" );
     }
 
     private static void learn( File source ,
@@ -186,6 +187,11 @@ public class Main
         }
     }
 
+    /**
+     * 
+     * @param destination
+     * @param roundDistance in meters
+     */
     private static void extractKML( File destination ,
                                     Double roundDistance )
     {

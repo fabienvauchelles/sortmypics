@@ -246,12 +246,12 @@ public class GeoReverse
     }
 
     /**
-     * 
+     *
      * @param lat1
      * @param lng1
      * @param lat2
      * @param lng2
-     * @return in km
+     * @return in meters
      */
     public static double distance( double lat1 ,
                                    double lng1 ,
@@ -270,7 +270,7 @@ public class GeoReverse
         double t5 = t1 + t4;
         double rad_dist = Math.atan( -t5 / Math.sqrt( -t5 * t5 + 1 ) ) + 2 * Math.atan( 1 );
 
-        return ( rad_dist * 3437.74677 * 1.1508 ) * 1.6093470878864446;
+        return ( rad_dist * 3437.74677 * 1.1508 ) * 1.6093470878864446 * 1000.0;
     }
 
     public static class GeoData

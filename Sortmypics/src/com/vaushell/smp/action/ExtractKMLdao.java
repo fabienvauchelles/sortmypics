@@ -40,6 +40,10 @@ public class ExtractKMLdao
         this.destination = destination;
     }
 
+    /**
+     *
+     * @param roundDistance in meters
+     */
     public void setRoundDistance( Double roundDistance )
     {
         this.roundDistance = roundDistance;

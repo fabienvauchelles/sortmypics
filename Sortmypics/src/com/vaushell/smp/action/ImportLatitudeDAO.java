@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory;
 public class ImportLatitudeDAO
 {
     // PUBLIC
-    public static final double MAXDISTANCE_IN_KM = 2.0;
+    public static final double MAXDISTANCE_IN_METERS = 2000.0;
     public static final double ACCURACY_MAX_IN_METERS = 50.0;
 
     public ImportLatitudeDAO()
@@ -53,7 +53,7 @@ public class ImportLatitudeDAO
                 long bestDiff = Long.MAX_VALUE;
                 for ( GLatitude.GLocation gl : dao.getAllLocations( minCal ) )
                 {
-                    if ( gl.getAccuracy() == null || gl.getAccuracy().compareTo( MAXDISTANCE_IN_KM ) <= 0 )
+                    if ( gl.getAccuracy() == null || gl.getAccuracy().compareTo( ACCURACY_MAX_IN_METERS ) <= 0 )
                     {
                         long diff = Math.abs( gl.getCalendar().getTimeInMillis() - actualFile.getCreated().getTimeInMillis() );
                         if ( diff < bestDiff )
@@ -78,7 +78,7 @@ public class ImportLatitudeDAO
                         if ( GeoReverse.distance( actualFile.getLatitude() ,
                                                   actualFile.getLongitude() ,
                                                   best.getLatitude() ,
-                                                  best.getLongitude() ) > MAXDISTANCE_IN_KM )
+                                                  best.getLongitude() ) > MAXDISTANCE_IN_METERS )
                         {
                             logger.warn( "GPS doesnt match between latitude and existing for '" + actualFile.getFile().
                                     getAbsolutePath() + "'" );

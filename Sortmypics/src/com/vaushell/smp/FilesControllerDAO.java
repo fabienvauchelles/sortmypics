@@ -49,7 +49,7 @@ import org.slf4j.LoggerFactory;
 public class FilesControllerDAO
 {
     // PUBLIC
-    public final static double NEAR_IN_KM = 0.050;
+    public final static double NEAR_IN_METERS = 50.0;
 
     public FilesControllerDAO()
     {
@@ -763,7 +763,7 @@ public class FilesControllerDAO
                                                            place.getLongitude() ,
                                                            file.getLatitude() ,
                                                            file.getLongitude() );
-                    if ( distance <= NEAR_IN_KM )
+                    if ( distance <= NEAR_IN_METERS )
                     {
                         if ( distance < bestDistance )
                         {
