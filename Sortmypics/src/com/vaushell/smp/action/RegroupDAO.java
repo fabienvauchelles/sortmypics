@@ -8,10 +8,6 @@ import com.vaushell.smp.FilesControllerDAO;
 import com.vaushell.smp.model.MFile;
 import com.vaushell.smp.model.MPlace;
 import com.vaushell.tools.geo.GeoReverse;
-import de.micromata.opengis.kml.v_2_2_0.Document;
-import de.micromata.opengis.kml.v_2_2_0.Folder;
-import de.micromata.opengis.kml.v_2_2_0.Kml;
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -158,21 +154,23 @@ public class RegroupDAO
                     GeoReverse.GeoData gd = new GeoReverse.GeoData( latSum / group.files.size() ,
                                                                     lngSum / group.files.size() );
                     String address = dao.convertGeoToAddress( gd );
-                    if ( address != null && address.length() > 0 )
+                    if ( address == null || address.length() <= 0)
                     {
-                        if ( logger.isDebugEnabled() )
-                        {
-                            logger.debug( "[RegroupDAO] create place '" + address + "' for " + group.files.size() + " files" );
-                        }
-
-                        MPlace newPlace = new MPlace( UUID.randomUUID().toString() ,
-                                                      address ,
-                                                      gd.getLatitude() ,
-                                                      gd.getLongitude() );
-
-                        dao.addPlaceForFiles( newPlace ,
-                                              group.files );
+                        address = gd.getLatitude() + ", " + gd.getLongitude();
                     }
+                    
+                    if ( logger.isDebugEnabled() )
+                    {
+                        logger.debug( "[RegroupDAO] create place '" + address + "' for " + group.files.size() + " files" );
+                    }
+
+                    MPlace newPlace = new MPlace( UUID.randomUUID().toString() ,
+                                                  address ,
+                                                  gd.getLatitude() ,
+                                                  gd.getLongitude() );
+
+                    dao.addPlaceForFiles( newPlace ,
+                                          group.files );
                 }
             }
         }
