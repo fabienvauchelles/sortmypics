@@ -12,6 +12,7 @@ import com.drew.metadata.exif.ExifIFD0Directory;
 import com.drew.metadata.exif.ExifSubIFDDirectory;
 import com.drew.metadata.exif.GpsDirectory;
 import com.vaushell.smp.model.MFile;
+import com.vaushell.smp.model.MGroup;
 import com.vaushell.smp.model.MLatitudeCache;
 import com.vaushell.smp.model.MPlace;
 import com.vaushell.smp.model.MPlaceCache;
@@ -384,6 +385,8 @@ public class FilesControllerDAO
 
         try
         {
+
+            factory.getCurrentSession().createQuery( "update MFile f set f.group=NULL" ).executeUpdate();
             factory.getCurrentSession().createQuery( "delete from MGroup" ).executeUpdate();
 
             factory.getCurrentSession().flush();
@@ -758,6 +761,73 @@ public class FilesControllerDAO
         }
     }
 
+    public List<File[]> getAllFilesSRCtoDST( File destination )
+    {
+        if ( logger.isDebugEnabled() )
+        {
+            logger.debug(
+                    "[FilesControllerDAO] getAllFilesSRCtoDST()" );
+        }
+
+        factory.getCurrentSession().beginTransaction();
+
+        try
+        {
+
+            List<File[]> results = new ArrayList<File[]>();
+
+            Query q = factory.getCurrentSession().createQuery(
+                    "select f from MFile f" );
+
+            SimpleDateFormat sf = new SimpleDateFormat( "yyyy-MM-dd" );
+
+            List<MFile> files = q.list();
+            for ( MFile mf : files )
+            {
+                File source = mf.getFile();
+
+                MGroup group = mf.getGroup();
+
+                StringBuilder sbDST = new StringBuilder();
+                sbDST.append( destination.getAbsolutePath() );
+                sbDST.append( File.separator );
+
+                sbDST.append( sf.format( group.getMin().getCreated().getTime() ) );
+
+                if ( group.getPlace() != null )
+                {
+                    sbDST.append( " - " ).append( group.getPlace().getLocation() );
+                }
+
+                sbDST.append( File.separator );
+                sbDST.append( source.getName() );
+
+                results.add( new File[]
+                        {
+                            source , new File( removeFilecar( sbDST.toString() ) )
+                        } );
+            }
+
+            factory.getCurrentSession().flush();
+            factory.getCurrentSession().getTransaction().commit();
+
+            return results;
+        }
+        catch( NonUniqueResultException ex )
+        {
+            factory.getCurrentSession().flush();
+            factory.getCurrentSession().getTransaction().commit();
+
+            return null;
+        }
+        catch( RuntimeException th )
+        {
+            factory.getCurrentSession().getTransaction().rollback();
+
+            throw th;
+        }
+    }
+
     public void matchPlaces()
     {
         if ( logger.isDebugEnabled() )
@@ -827,7 +897,7 @@ public class FilesControllerDAO
         if ( logger.isDebugEnabled() )
         {
             logger.debug(
-                    "[FilesControllerDAO] addPlace() : place=" + place );
+                    "[FilesControllerDAO] addPlaceForFiles() : place=" + place.getLocation() + " / files.size()=" + files.size() );
         }
 
         factory.getCurrentSession().beginTransaction();
@@ -838,6 +908,46 @@ public class FilesControllerDAO
 
             for ( MFile file : files )
             {
+                file.setPlace( place );
+
+                factory.getCurrentSession().update( file );
+            }
+
+            factory.getCurrentSession().flush();
+            factory.getCurrentSession().getTransaction().commit();
+        }
+        catch( RuntimeException th )
+        {
+            factory.getCurrentSession().getTransaction().rollback();
+
+            throw th;
+        }
+    }
+
+    public void addGroupForFiles( MGroup group ,
+                                  List<MFile> files )
+    {
+        if ( group == null || files == null )
+        {
+            throw new NullPointerException();
+        }
+
+        if ( logger.isDebugEnabled() )
+        {
+            logger.debug(
+                    "[FilesControllerDAO] addGroupForFiles() : group=" + group.getID() + " / files.size()=" + files.size() );
+        }
+
+        factory.getCurrentSession().beginTransaction();
+
+        try
+        {
+            factory.getCurrentSession().save( group );
+
+            for ( MFile file : files )
+            {
+                file.setGroup( group );
+
                 factory.getCurrentSession().update( file );
             }
 
@@ -1189,5 +1299,11 @@ public class FilesControllerDAO
         {
             return null;
         }
+    }
+    
+    private static String removeFilecar( String r )
+    {
+        return r.replaceAll( "\"",
+                          "" );
     }
 }

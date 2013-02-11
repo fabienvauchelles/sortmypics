@@ -9,6 +9,9 @@ import com.vaushell.smp.action.ExtractKMLdao;
 import com.vaushell.smp.action.ImportContactDAO;
 import com.vaushell.smp.action.ImportLatitudeDAO;
 import com.vaushell.smp.action.LearnDAO;
+import com.vaushell.smp.action.MakeGroupDAO;
+import com.vaushell.smp.action.MoveDAO;
+import com.vaushell.smp.action.RegroupDAO;
 import java.io.File;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
@@ -127,6 +130,40 @@ public class Main
                     importLatitude();
                 }
             }
+            else if ( order.equalsIgnoreCase( "makegroup" ) )
+            {
+                if ( args.length != 1 )
+                {
+                    showUsage();
+                }
+                else
+                {
+
+                    makeGroup();
+                }
+            }
+            else if ( order.equalsIgnoreCase( "move" ) )
+            {
+                if ( args.length < 2 || args.length > 3 )
+                {
+                    showUsage();
+                }
+                else
+                {
+                    File destination = new File( args[ 1] );
+
+                    if ( args.length == 3 && "reverse".equalsIgnoreCase( args[ 2] ) )
+                    {
+                        move( destination ,
+                              false );
+                    }
+                    else
+                    {
+                        move( destination ,
+                              true );
+                    }
+                }
+            }
             else
             {
                 showUsage();
@@ -145,6 +182,8 @@ public class Main
         System.err.println( "  2. importlatitude : add google latitude position to existing picture" );
         System.err.println( "  3. importcontact <username> <password> : import google address books to place" );
         System.err.println( "  4. regroup <round distance in meters> : regroup position for unassociated place" );
+        System.err.println( "  5. makegroup : group pictures" );
+        System.err.println( "  6. move : move pictures <destination> [reverse]" );
         System.err.println( "  (optional) extract <kml destination> <round distance in meters> : extract all kml data to a file" );
     }
 
@@ -201,7 +240,7 @@ public class Main
     }
 
     /**
-     * 
+     *
      * @param destination
      * @param roundDistance in meters
      */
@@ -308,6 +347,55 @@ public class Main
             ImportLatitudeDAO importDAO = new ImportLatitudeDAO();
             importDAO.setDAO( dao );
             importDAO.run();
+
+            dao.stop();
+        }
+        catch( IOException ex )
+        {
+            logger.error( ex.getMessage() ,
+                          ex );
+        }
+    }
+
+    private static void makeGroup()
+    {
+        try
+        {
+            FilesControllerDAO dao = new FilesControllerDAO();
+            dao.setDatabaseFile( new File( "database" ) );
+            dao.setDatabaseFileTemplate( new File( "database-template" ) );
+
+            dao.start();
+
+            MakeGroupDAO mgDAO = new MakeGroupDAO();
+            mgDAO.setDAO( dao );
+            mgDAO.run();
+
+            dao.stop();
+        }
+        catch( IOException ex )
+        {
+            logger.error( ex.getMessage() ,
+                          ex );
+        }
+    }
+
+    private static void move( File destination ,
+                              boolean way )
+    {
+        try
+        {
+            FilesControllerDAO dao = new FilesControllerDAO();
+            dao.setDatabaseFile( new File( "database" ) );
+            dao.setDatabaseFileTemplate( new File( "database-template" ) );
+
+            dao.start();
+
+            MoveDAO mvDAO = new MoveDAO();
+            mvDAO.setDAO( dao );
+            mvDAO.setDestination( destination );
+            mvDAO.setWay( way );
+            mvDAO.run();
 
             dao.stop();
         }
