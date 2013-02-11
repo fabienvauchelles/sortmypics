@@ -63,7 +63,7 @@ public class ExtractKMLdao
         {
             logger.debug( "[ExtractKMLdao] retreive all locations" );
         }
-        List<MFile> locations = dao.getAllLocation();
+        List<MFile> locations = dao.getAllFilesWithLocationOrderbyCalendar();
 
         // Create groups
         groups.clear();

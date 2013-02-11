@@ -695,12 +695,12 @@ public class FilesControllerDAO
         }
     }
 
-    public List<MFile> getAllFilesByCalendar()
+    public List<MFile> getAllFilesOrderbyCalendar()
     {
         if ( logger.isDebugEnabled() )
         {
             logger.debug(
-                    "[FilesControllerDAO] getAllFilesByCalendar()" );
+                    "[FilesControllerDAO] getAllFilesOrderbyCalendar()" );
         }
 
         factory.getCurrentSession().beginTransaction();
@@ -748,7 +748,7 @@ public class FilesControllerDAO
             Query qPlaces = factory.getCurrentSession().createQuery( "from MPlace p" );
             List<MPlace> places = qPlaces.list();
 
-            Query qFiles = factory.getCurrentSession().createQuery( 
+            Query qFiles = factory.getCurrentSession().createQuery(
                     "from MFile f where f.place is null and f.latitude is not null and f.longitude is not null" );
             List<MFile> files = qFiles.list();
 

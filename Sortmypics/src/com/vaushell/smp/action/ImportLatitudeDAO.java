@@ -43,7 +43,7 @@ public class ImportLatitudeDAO
         {
             // Prepare dates
             List<MFile> updated = new ArrayList<MFile>();
-            for ( MFile actualFile : dao.getAllFilesByCalendar() )
+            for ( MFile actualFile : dao.getAllFilesOrderbyCalendar() )
             {
                 Calendar minCal = (Calendar) actualFile.getCreated().clone();
                 minCal.add( Calendar.MINUTE ,
