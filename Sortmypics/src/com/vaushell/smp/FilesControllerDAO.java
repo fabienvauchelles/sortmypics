@@ -355,11 +355,11 @@ public class FilesControllerDAO
 
         try
         {
-            factory.getCurrentSession().createSQLQuery( "DELETE FROM MGROUP" ).executeUpdate();
-            factory.getCurrentSession().createSQLQuery( "DELETE FROM MFILE" ).executeUpdate();
-            factory.getCurrentSession().createSQLQuery( "DELETE FROM MPLACE" ).executeUpdate();
-            factory.getCurrentSession().createSQLQuery( "DELETE FROM MPLACE_CACHE" ).executeUpdate();
-            factory.getCurrentSession().createSQLQuery( "DELETE FROM MLATITUDE_CACHE" ).executeUpdate();
+            factory.getCurrentSession().createQuery( "delete from MGroup" ).executeUpdate();
+            factory.getCurrentSession().createSQLQuery( "delete from MFile" ).executeUpdate();
+            factory.getCurrentSession().createSQLQuery( "delete from MPlace" ).executeUpdate();
+            factory.getCurrentSession().createSQLQuery( "delete from MPlaceCache" ).executeUpdate();
+            factory.getCurrentSession().createSQLQuery( "delete from MLatitudeCache" ).executeUpdate();
 
             factory.getCurrentSession().flush();
             factory.getCurrentSession().getTransaction().commit();
@@ -372,12 +372,37 @@ public class FilesControllerDAO
         }
     }
 
-    public List<MFile> getAllLocation()
+    public void cleanGroups()
     {
         if ( logger.isDebugEnabled() )
         {
             logger.debug(
-                    "[FilesControllerDAO] getAllLocation()" );
+                    "[FilesControllerDAO] cleanGroups()" );
+        }
+
+        factory.getCurrentSession().beginTransaction();
+
+        try
+        {
+            factory.getCurrentSession().createQuery( "delete from MGroup" ).executeUpdate();
+
+            factory.getCurrentSession().flush();
+            factory.getCurrentSession().getTransaction().commit();
+        }
+        catch( RuntimeException th )
+        {
+            factory.getCurrentSession().getTransaction().rollback();
+
+            throw th;
+        }
+    }
+
+    public List<MFile> getAllFilesWithLocationOrderbyCalendar()
+    {
+        if ( logger.isDebugEnabled() )
+        {
+            logger.debug(
+                    "[FilesControllerDAO] getAllFilesWithLocationOrderbyCalendar()" );
         }
 
         factory.getCurrentSession().beginTransaction();
@@ -790,6 +815,7 @@ public class FilesControllerDAO
             throw th;
         }
     }
+
     public void addPlaceForFiles( MPlace place ,
                                   List<MFile> files )
     {
