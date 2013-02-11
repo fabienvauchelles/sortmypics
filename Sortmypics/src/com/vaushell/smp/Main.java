@@ -87,6 +87,19 @@ public class Main
                                 roundDistance );
                 }
             }
+            else if ( order.equalsIgnoreCase( "regroup" ) )
+            {
+                if ( args.length != 2 )
+                {
+                    showUsage();
+                }
+                else
+                {
+                    Double roundDistance = new Double( args[ 1] );
+
+                    regroup( roundDistance );
+                }
+            }
             else if ( order.equalsIgnoreCase( "importcontact" ) )
             {
                 if ( args.length != 3 )
@@ -208,6 +221,34 @@ public class Main
             extractDAO.setDestination( destination );
             extractDAO.setRoundDistance( roundDistance );
             extractDAO.run();
+
+            dao.stop();
+        }
+        catch( IOException ex )
+        {
+            logger.error( ex.getMessage() ,
+                          ex );
+        }
+    }
+
+    /**
+     *
+     * @param roundDistance in meters
+     */
+    private static void regroup( Double roundDistance )
+    {
+        try
+        {
+            FilesControllerDAO dao = new FilesControllerDAO();
+            dao.setDatabaseFile( new File( "database" ) );
+            dao.setDatabaseFileTemplate( new File( "database-template" ) );
+
+            dao.start();
+
+            RegroupDAO regroupDAO = new RegroupDAO();
+            regroupDAO.setDAO( dao );
+            regroupDAO.setRoundDistance( roundDistance );
+            regroupDAO.run();
 
             dao.stop();
         }

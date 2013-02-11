@@ -386,7 +386,7 @@ public class FilesControllerDAO
         {
 
             Query q = factory.getCurrentSession().createQuery(
-                    "select f from MFile f where f.latitude is not null and f.longitude is not null" );
+                    "select f from MFile f where f.latitude is not null and f.longitude is not null order by f.created" );
 
             List<MFile> result = q.list();
 
@@ -778,6 +778,41 @@ public class FilesControllerDAO
                     file.setPlace( best );
                     factory.getCurrentSession().save( best );
                 }
+            }
+
+            factory.getCurrentSession().flush();
+            factory.getCurrentSession().getTransaction().commit();
+        }
+        catch( RuntimeException th )
+        {
+            factory.getCurrentSession().getTransaction().rollback();
+
+            throw th;
+        }
+    }
+    public void addPlaceForFiles( MPlace place ,
+                                  List<MFile> files )
+    {
+        if ( place == null || files == null )
+        {
+            throw new NullPointerException();
+        }
+
+        if ( logger.isDebugEnabled() )
+        {
+            logger.debug(
+                    "[FilesControllerDAO] addPlace() : place=" + place );
+        }
+
+        factory.getCurrentSession().beginTransaction();
+
+        try
+        {
+            factory.getCurrentSession().save( place );
+
+            for ( MFile file : files )
+            {
+                factory.getCurrentSession().update( file );
             }
 
             factory.getCurrentSession().flush();
