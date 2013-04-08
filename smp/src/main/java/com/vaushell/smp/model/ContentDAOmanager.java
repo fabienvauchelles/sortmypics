@@ -14,6 +14,7 @@ import java.util.Map;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.EntityTransaction;
+import javax.persistence.NoResultException;
 import javax.persistence.NonUniqueResultException;
 import javax.persistence.Persistence;
 import javax.persistence.Query;
@@ -95,30 +96,35 @@ public class ContentDAOmanager
                         ID );
     }
 
-    public List<Listing> getAllListings()
+    public List<FilePath> getAllFilePathsAndDescription()
     {
         if ( logger.isDebugEnabled() )
         {
-            logger.debug( "[ContentDAOmanager] getAllListings" );
+            logger.debug( "[ContentDAOmanager] getAllFilePathsAndDescription" );
         }
 
-        Query q = em.createQuery( "from Listing l order by l.date" );
+        Query q = em.createQuery( "from FilePath fp order by fp.path, fp.name" );
+        List<FilePath> fps = q.getResultList();
 
-        List<Listing> lst = q.getResultList();
+        // Links are automatically build (same description object between filepath)
+        for ( FilePath fp : fps )
+        {
+            fp.getDescription();
+        }
 
-        return lst;
+        return fps;
     }
 
-    public Listing addListing( Listing listing )
+    public void addFilePath( FilePath fp )
     {
-        if ( listing == null )
+        if ( fp == null )
         {
             throw new NullPointerException();
         }
 
         if ( logger.isDebugEnabled() )
         {
-            logger.debug( "[ContentDAOmanager] addListing : listing=" + listing );
+            logger.debug( "[ContentDAOmanager] addFilePath : fp=" + fp );
         }
 
         waitAndLock();
@@ -128,61 +134,11 @@ public class ContentDAOmanager
         {
             transac.begin();
 
-            Listing newListing = em.merge( listing );
-
-            transac.commit();
-
-            return newListing;
-        }
-        catch( RuntimeException ex )
-        {
-            if ( transac != null )
-            {
-                transac.rollback();
-            }
-
-            throw ex;
-        }
-        finally
-        {
-            releaseLock();
-        }
-    }
-
-    public void deleteListing( Listing listing )
-    {
-        if ( listing == null )
-        {
-            throw new NullPointerException();
-        }
-
-        if ( logger.isDebugEnabled() )
-        {
-            logger.debug( "[ContentDAOmanager] deleteListing : listing=" + listing );
-        }
-
-        waitAndLock();
-
-        EntityTransaction transac = em.getTransaction();
-        try
-        {
-            transac.begin();
-
-            Query qDescription = em.createQuery(
-                    "delete from Description d where d in (select p.description from Place p where p.listing=:listing)" );
-            qDescription.setParameter( "listing" ,
-                                       listing );
-            qDescription.executeUpdate();
-
-            Query qPlace = em.createQuery( "delete from Place p where p.listing=:listing" );
-            qPlace.setParameter( "listing" ,
-                                 listing );
-            qPlace.executeUpdate();
-
-            Query qListing = em.createQuery( "delete from Listing l where l=:listing" );
-            qListing.setParameter( "listing" ,
-                                   listing );
-            qListing.executeUpdate();
+            em.persist( fp );
+            
+            Description d = fp.getDescription();
+            d.setFilesCount( d.getFilesCount() + 1 );
+            em.merge( d );
 
             transac.commit();
         }
@@ -201,41 +157,16 @@ public class ContentDAOmanager
         }
     }
 
-    public List<Place> getAllPlacesAndDescritorsForListing( Listing l )
+    public void updateFilePath( FilePath fp )
     {
-        if ( l == null )
+        if ( fp == null )
         {
             throw new NullPointerException();
         }
 
         if ( logger.isDebugEnabled() )
         {
-            logger.debug( "[ContentDAOmanager] getAllPlacesAndDescritorsForListing : l=" + l );
-        }
-
-        Query q = em.createQuery( "from Place p where p.listing=:listing order by p.path" );
-        q.setParameter( "listing" ,
-                        l );
-
-        List<Place> places = q.getResultList();
-        for ( Place p : places )
-        {
-            p.getDescription();
-        }
-
-        return places;
-    }
-
-    public void addPlace( Place place )
-    {
-        if ( place == null )
-        {
-            throw new NullPointerException();
-        }
-
-        if ( logger.isDebugEnabled() )
-        {
-            logger.debug( "[ContentDAOmanager] addPlace : place=" + place );
+            logger.debug( "[ContentDAOmanager] updateFilePath : fp=" + fp );
         }
 
         waitAndLock();
@@ -245,7 +176,7 @@ public class ContentDAOmanager
         {
             transac.begin();
 
-            em.merge( place );
+            em.merge( fp );
 
             transac.commit();
         }
@@ -264,8 +195,9 @@ public class ContentDAOmanager
         }
     }
 
-    public Place getPlaceByPathAndDescription( String path ,
-                                               Description d )
+    public FilePath getFilePathByNameAndDescription( String path ,
+                                                     String name ,
+                                                     Description d )
     {
         if ( path == null || d == null )
         {
@@ -274,18 +206,26 @@ public class ContentDAOmanager
 
         if ( logger.isDebugEnabled() )
         {
-            logger.debug( "[getPlaceByPathAndDescription] path : path=" + path + " / d=" + d );
+            logger.
+                    debug(
+                    "[ContentDAOmanager] getFilePathByPathAndDescription() : path=" + path + " / name=" + name + " / d=" + d );
         }
 
-        Query q = em.createQuery( "from Place p where p.path=:path and p.description=:description" );
+        Query q = em.createQuery( "from FilePath fp where fp.path=:path and fp.name=:name and fp.description=:description" );
         q.setParameter( "path" ,
                         path );
+        q.setParameter( "name" ,
+                        name );
         q.setParameter( "description" ,
                         d );
 
         try
         {
-            return (Place) q.getSingleResult();
+            return (FilePath) q.getSingleResult();
+        }
+        catch( NoResultException ex )
+        {
+            return null;
         }
         catch( NonUniqueResultException ex )
         {
@@ -303,6 +243,44 @@ public class ContentDAOmanager
         if ( logger.isDebugEnabled() )
         {
             logger.debug( "[ContentDAOmanager] addDescription : description=" + description );
+        }
+
+        waitAndLock();
+
+        EntityTransaction transac = em.getTransaction();
+        try
+        {
+            transac.begin();
+
+            em.persist( description );
+
+            transac.commit();
+        }
+        catch( RuntimeException ex )
+        {
+            if ( transac != null )
+            {
+                transac.rollback();
+            }
+
+            throw ex;
+        }
+        finally
+        {
+            releaseLock();
+        }
+    }
+
+    public void updateDescription( Description description )
+    {
+        if ( description == null )
+        {
+            throw new NullPointerException();
+        }
+
+        if ( logger.isDebugEnabled() )
+        {
+            logger.debug( "[ContentDAOmanager] updateDescription : description=" + description );
         }
 
         waitAndLock();

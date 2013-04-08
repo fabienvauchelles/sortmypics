@@ -8,8 +8,7 @@ import com.vaushell.rc.thread.A_Task;
 import com.vaushell.smp.MainJFrame;
 import com.vaushell.smp.model.ContentDAOmanager;
 import com.vaushell.smp.model.Description;
-import com.vaushell.smp.model.Listing;
-import com.vaushell.smp.model.Place;
+import com.vaushell.smp.model.FilePath;
 import com.vaushell.tools.exiftool.ExifTool;
 import com.vaushell.tools.exiftool.ExifToolManager;
 import com.vaushell.tools.md5.MD5tools;
@@ -31,13 +30,13 @@ public class ImportPictureTask
 {
     // PUBLIC
     public ImportPictureTask( File target ,
-                              Listing listing ,
+                              boolean ignoreSort ,
                               MainJFrame main )
     {
-        super( "Import picture '" + target.getAbsolutePath() + "' for listing '" + listing.getName() + "'" );
+        super( "Import picture '" + target.getAbsolutePath() );
 
         this.target = target;
-        this.listing = listing;
+        this.ignoreSort = ignoreSort;
         this.main = main;
 
         init();
@@ -61,32 +60,35 @@ public class ImportPictureTask
 
                 d = new Description();
                 d.setID( md5hash );
-                d.setType( Description.TYPE_PICTURE );
+                d.setType( Description.FilePathType.PICTURE );
+                d.setIgnoreSort( ignoreSort );
                 updateFromExif( d ,
                                 exifMap );
 
                 ContentDAOmanager.getInstance().addDescription( d );
 
-                Place place = new Place( target.getAbsolutePath() ,
-                                         d ,
-                                         listing );
-                ContentDAOmanager.getInstance().addPlace( place );
+                FilePath fp = new FilePath( target.getParentFile().getAbsolutePath() ,
+                                            target.getName() ,
+                                            d );
+                ContentDAOmanager.getInstance().addFilePath( fp );
 
-                main.addPlace( place );
+                main.addFilePath( fp );
             }
             else
             {
-                Place place = ContentDAOmanager.getInstance().getPlaceByPathAndDescription( target.getAbsolutePath() ,
-                                                                                            d );
-                if ( place == null )
+                FilePath fp = ContentDAOmanager.getInstance().getFilePathByNameAndDescription( target.getParentFile().
+                        getAbsolutePath() ,
+                                                                                               target.getName() ,
+                                                                                               d );
+                if ( fp == null )
                 {
-                    place = new Place( target.getAbsolutePath() ,
-                                       d ,
-                                       listing );
+                    fp = new FilePath( target.getParentFile().getAbsolutePath() ,
+                                       target.getName() ,
+                                       d );
 
-                    ContentDAOmanager.getInstance().addPlace( place );
+                    ContentDAOmanager.getInstance().addFilePath( fp );
 
-                    main.addPlace( place );
+                    main.addFilePath( fp );
                 }
 
             }
@@ -104,7 +106,7 @@ public class ImportPictureTask
     // PRIVATE
     private final static Logger logger = LoggerFactory.getLogger( ImportPictureTask.class );
     private File target;
-    private Listing listing;
+    private boolean ignoreSort;
     private MainJFrame main;
 
     private void init()
@@ -144,26 +146,6 @@ public class ImportPictureTask
             d.setTitle( title );
         }
 
-        // Description
-        String caption = exifMap.get( "Description" );
-        if ( caption != null )
-        {
-            d.setCaption( caption );
-        }
-
-        // GPS altitude
-        String gpsAltitudeStr = exifMap.get( "GPSAltitude" );
-        if ( gpsAltitudeStr != null )
-        {
-            try
-            {
-                d.setGPSalt( Double.parseDouble( gpsAltitudeStr ) );
-            }
-            catch( NumberFormatException ex )
-            {
-            }
-        }
-
         // GPS latitude
         String gpsLatitudeStr = exifMap.get( "GPSLatitude" );
         if ( gpsLatitudeStr != null )
@@ -188,20 +170,6 @@ public class ImportPictureTask
             catch( NumberFormatException ex )
             {
             }
-        }
-
-        // Country
-        String country = exifMap.get( "Country" );
-        if ( country != null )
-        {
-            d.setLocCountry( country );
-        }
-
-        // City
-        String city = exifMap.get( "City" );
-        if ( city != null )
-        {
-            d.setLocCity( city );
         }
 
         // Make

@@ -11,8 +11,6 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 /**
@@ -25,14 +23,16 @@ public class Place
         implements Serializable
 {
     // PUBLIC
-    public Place( String path ,
-                  Description description ,
-                  Listing listing )
+    public Place( String name ,
+                  double gpsLat ,
+                  double gpsLng ,
+                  double radius )
     {
         this.ID = Long.MIN_VALUE;
-        this.path = path;
-        this.description = description;
-        this.listing = listing;
+        this.name = name;
+        this.gpsLat = gpsLat;
+        this.gpsLng = gpsLng;
+        this.radius = radius;
 
         init();
     }
@@ -40,12 +40,13 @@ public class Place
     public Place()
     {
         this( null ,
-              null ,
-              null );
+              Double.NaN ,
+              Double.NaN ,
+              Double.NaN );
     }
 
     @Id
-    @Column( name = "P_ID" )
+    @Column( name = "PL_ID" )
     @GeneratedValue( strategy = GenerationType.IDENTITY )
     public Long getID()
     {
@@ -57,54 +58,67 @@ public class Place
         this.ID = ID;
     }
 
-    @Column( name = "P_PATH" , length = 2048 )
+    @Column( name = "PL_NAME" , length = 1024 )
     @Basic( optional = false )
-    public String getPath()
+    public String getName()
     {
-        return path;
+        return name;
     }
 
-    public void setPath( String path )
+    public void setName( String name )
     {
-        this.path = path;
+        this.name = name;
     }
 
-    @ManyToOne( optional = false )
-    @JoinColumn( name = "P_D_ID" )
-    public Description getDescription()
+    @Column( name = "PL_GPS_LAT" )
+    @Basic( optional = false )
+    public double getGPSlat()
     {
-        return description;
+        return gpsLat;
     }
 
-    public void setDescription( Description description )
+    public void setGPSlat( double gpsLat )
     {
-        this.description = description;
+        this.gpsLat = gpsLat;
     }
 
-    @ManyToOne( optional = false )
-    @JoinColumn( name = "P_L_ID" )
-    public Listing getListing()
+    @Column( name = "PL_GPS_LNG" )
+    @Basic( optional = false )
+    public double getGPSlng()
     {
-        return listing;
+        return gpsLng;
     }
 
-    public void setListing( Listing listing )
+    public void setGPSlng( double gpsLng )
     {
-        this.listing = listing;
+        this.gpsLng = gpsLng;
+    }
+
+    @Column( name = "PL_RADIUS" )
+    @Basic( optional = false )
+    public double getRadius()
+    {
+        return radius;
+    }
+
+    public void setRadius( double radius )
+    {
+        this.radius = radius;
     }
 
     @Override
     public String toString()
     {
-        return "Place{" + "ID=" + ID + ", path=" + path + ", description=" + description + ", listing=" + listing + '}';
+        return "Place{" + "ID=" + ID + ", name=" + name + ", gpsLat=" + gpsLat + ", gpsLng=" + gpsLng + ", radius=" + radius + '}';
     }
     // PROTECTED
     // PRIVATE
-    private final static long serialVersionUID = 6992349238436L;
+    private final static long serialVersionUID = 3459183452134312L;
     private Long ID;
-    private String path;
-    private Description description;
-    private Listing listing;
+    private String name;
+    private double gpsLat;
+    private double gpsLng;
+    private double radius;
 
     private void init()
     {

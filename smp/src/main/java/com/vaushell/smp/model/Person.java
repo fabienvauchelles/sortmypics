@@ -5,7 +5,6 @@
 package com.vaushell.smp.model;
 
 import java.io.Serializable;
-import java.util.Calendar;
 import javax.persistence.Basic;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -13,37 +12,32 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
 
 /**
  *
  * @author Fabien VAUCHELLES <fabienATvauchellesDOTcom>
  */
 @Entity
-@Table( name = "LISTING" )
-public class Listing
+@Table( name = "PERSON" )
+public class Person
         implements Serializable
 {
     // PUBLIC
-    public Listing( String name ,
-                    Calendar date )
+    public Person( String name )
     {
         this.ID = Long.MIN_VALUE;
         this.name = name;
-        this.date = date;
 
         init();
     }
 
-    public Listing()
+    public Person()
     {
-        this( null ,
-              null );
+        this( null );
     }
 
     @Id
-    @Column( name = "L_ID" )
+    @Column( name = "PE_ID" )
     @GeneratedValue( strategy = GenerationType.IDENTITY )
     public Long getID()
     {
@@ -55,7 +49,7 @@ public class Listing
         this.ID = ID;
     }
 
-    @Column( name = "L_NAME" , length = 1024 )
+    @Column( name = "PE_NAME" , length = 1024 )
     @Basic( optional = false )
     public String getName()
     {
@@ -67,30 +61,16 @@ public class Listing
         this.name = name;
     }
 
-    @Column( name = "L_DATE" )
-    @Temporal( TemporalType.TIMESTAMP )
-    @Basic( optional = false )
-    public Calendar getDate()
-    {
-        return date;
-    }
-
-    public void setDate( Calendar date )
-    {
-        this.date = date;
-    }
-
     @Override
     public String toString()
     {
-        return "Listing{" + "ID=" + ID + ", name=" + name + ", date=" + date + '}';
+        return "Person{" + "ID=" + ID + ", name=" + name + '}';
     }
     // PROTECTED
     // PRIVATE
-    private final static long serialVersionUID = 3245912383345L;
+    private final static long serialVersionUID = 123934589123L;
     private Long ID;
     private String name;
-    private Calendar date;
 
     private void init()
     {

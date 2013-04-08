@@ -9,10 +9,7 @@ import com.vaushell.rc.popup.A_PopupPanel;
 import com.vaushell.rc.popup.PopupDialog;
 import com.vaushell.rc.thread.ModalTaskPopup;
 import com.vaushell.smp.MainJFrame;
-import com.vaushell.smp.model.ContentDAOmanager;
-import com.vaushell.smp.model.Listing;
 import java.io.File;
-import java.util.Calendar;
 import java.util.Stack;
 import javax.swing.SwingUtilities;
 import org.apache.commons.io.FilenameUtils;
@@ -51,31 +48,17 @@ public class ImportPanel
         java.awt.GridBagConstraints gridBagConstraints;
 
         jPNLcontent = new javax.swing.JPanel();
-        jLBLname = new javax.swing.JLabel();
-        jTXTnameValue = new javax.swing.JTextField();
         jLBLsource = new javax.swing.JLabel();
         jFCsourceValue = new com.vaushell.tools.components.file.FileChooserPanel();
+        jLBLignoreSort = new javax.swing.JLabel();
+        jCBignoreSortValue = new javax.swing.JCheckBox();
         jPNLbuttons = new javax.swing.JPanel();
         jBTok = new javax.swing.JButton();
         jBTcancel = new javax.swing.JButton();
 
         jPNLcontent.setLayout(new java.awt.GridBagLayout());
 
-        jLBLname.setText("Titre :");
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
-        jPNLcontent.add(jLBLname, gridBagConstraints);
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 1;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
-        jPNLcontent.add(jTXTnameValue, gridBagConstraints);
-
-        jLBLsource.setText("Chemin source :");
+        jLBLsource.setText("Path :");
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
@@ -90,6 +73,18 @@ public class ImportPanel
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         jPNLcontent.add(jFCsourceValue, gridBagConstraints);
+
+        jLBLignoreSort.setText("Ignore sorting :");
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        jPNLcontent.add(jLBLignoreSort, gridBagConstraints);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        jPNLcontent.add(jCBignoreSortValue, gridBagConstraints);
 
         jPNLbuttons.setLayout(new java.awt.GridBagLayout());
 
@@ -152,12 +147,12 @@ public class ImportPanel
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jBTcancel;
     private javax.swing.JButton jBTok;
+    private javax.swing.JCheckBox jCBignoreSortValue;
     private com.vaushell.tools.components.file.FileChooserPanel jFCsourceValue;
-    private javax.swing.JLabel jLBLname;
+    private javax.swing.JLabel jLBLignoreSort;
     private javax.swing.JLabel jLBLsource;
     private javax.swing.JPanel jPNLbuttons;
     private javax.swing.JPanel jPNLcontent;
-    private javax.swing.JTextField jTXTnameValue;
     // End of variables declaration//GEN-END:variables
     // PROTECTED
     // PRIVATE
@@ -174,23 +169,21 @@ public class ImportPanel
 
     private void doIt()
     {
-        if ( jTXTnameValue.getText().isEmpty() )
+        final File path = jFCsourceValue.getFile();
+
+        if ( path == null )
         {
-            showWarning( "Name is empty" );
+            showWarning( "Path is empty" );
             return;
         }
 
-        if ( jFCsourceValue.getFile() == null )
+        if ( !path.isDirectory() )
         {
-            showWarning( "Source path is empty" );
+            showWarning( "Path is not a directory" );
             return;
         }
 
-        if ( !jFCsourceValue.getFile().isDirectory() )
-        {
-            showWarning( "Source path is not a directory" );
-            return;
-        }
+        final boolean ignoreSort = jCBignoreSortValue.isSelected();
 
         close();
 
@@ -208,16 +201,9 @@ public class ImportPanel
                     {
                         try
                         {
-                            // Create listing
-                            Listing listing = new Listing( jTXTnameValue.getText() ,
-                                                           Calendar.getInstance() );
-
-                            listing = ContentDAOmanager.getInstance().addListing( listing );
-                            ( (MainJFrame) getMain() ).addAndSelectListing( listing );
-
                             // Parse content
                             Stack<File> stack = new Stack<File>();
-                            stack.push( jFCsourceValue.getFile() );
+                            stack.push( path );
 
                             while ( !stack.isEmpty() )
                             {
@@ -233,11 +219,12 @@ public class ImportPanel
                                 else
                                 {
                                     String extension = FilenameUtils.getExtension( actual.getName() ).toLowerCase();
-                                    if ( extension.equals( "jpg" ) || extension.equals( "png" ) )
+                                    if ( extension.equals( "jpg" )
+                                         || extension.equals( "png" ) )
                                     {
                                         ( (MainJFrame) getMain() ).getWorkQueue().addTask(
                                                 new ImportPictureTask( actual ,
-                                                                       listing ,
+                                                                       ignoreSort ,
                                                                        (MainJFrame) getMain() ) );
                                     }
                                 }

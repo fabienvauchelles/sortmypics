@@ -9,7 +9,11 @@ import java.util.Calendar;
 import javax.persistence.Basic;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
@@ -24,26 +28,12 @@ public class Description
         implements Serializable
 {
     // PUBLIC
-    public final static short TYPE_PICTURE = 1;
-    public final static short TYPE_VIDEO = 2;
-    public final static short TYPE_OTHER = 3;
+    public enum FilePathType {
+        PICTURE, VIDEO, OTHER
+    }
 
     public Description()
     {
-        this.ID = null;
-        this.type = Short.MIN_VALUE;
-        this.createdDate = null;
-        this.gpsLat = null;
-        this.gpsLng = null;
-        this.gpsAlt = null;
-        this.locCity = null;
-        this.locCountry = null;
-        this.title = null;
-        this.caption = null;
-        this.make = null;
-        this.model = null;
-        this.updated = false;
-
         init();
     }
 
@@ -61,12 +51,13 @@ public class Description
 
     @Column( name = "D_TYPE" )
     @Basic( optional = false )
-    public short getType()
+    @Enumerated(EnumType.STRING)
+    public FilePathType getType()
     {
         return type;
     }
 
-    public void setType( short type )
+    public void setType( FilePathType type )
     {
         this.type = type;
     }
@@ -105,39 +96,18 @@ public class Description
         this.gpsLng = gpsLng;
     }
 
-    @Column( name = "D_GPS_ALT" )
-    public Double getGPSalt()
+    @ManyToOne
+    @JoinColumn( name = "D_PE_ID" )
+    public Person getPerson()
     {
-        return gpsAlt;
+        return person;
     }
 
-    public void setGPSalt( Double gpsAlt )
+    public void setPerson( Person person )
     {
-        this.gpsAlt = gpsAlt;
+        this.person = person;
     }
-
-    @Column( name = "D_LOC_CITY" , length = 1024 )
-    public String getLocCity()
-    {
-        return locCity;
-    }
-
-    public void setLocCity( String locCity )
-    {
-        this.locCity = locCity;
-    }
-
-    @Column( name = "D_LOC_COUNTRY" , length = 512 )
-    public String getLocCountry()
-    {
-        return locCountry;
-    }
-
-    public void setLocCountry( String locCountry )
-    {
-        this.locCountry = locCountry;
-    }
-
+    
     @Column( name = "D_TITLE" , length = 1024 )
     public String getTitle()
     {
@@ -147,17 +117,6 @@ public class Description
     public void setTitle( String title )
     {
         this.title = title;
-    }
-
-    @Column( name = "D_CAPTION" , length = 1024 )
-    public String getCaption()
-    {
-        return caption;
-    }
-
-    public void setCaption( String caption )
-    {
-        this.caption = caption;
     }
 
     @Column( name = "D_MAKE" , length = 256 )
@@ -182,6 +141,18 @@ public class Description
         this.model = model;
     }
 
+    @ManyToOne
+    @JoinColumn( name = "D_PL_ID" )
+    public Place getPlace()
+    {
+        return place;
+    }
+
+    public void setPlace( Place place )
+    {
+        this.place = place;
+    }
+    
     @Column( name = "D_UPDATED" )
     @Basic( optional = false )
     public boolean isUpdated()
@@ -194,29 +165,67 @@ public class Description
         this.updated = updated;
     }
 
+    @Column( name = "D_IGNORE_SORT" )
+    @Basic( optional = false )
+    public boolean isIgnoreSort()
+    {
+        return ignoreSort;
+    }
+
+    public void setIgnoreSort( boolean ignoreSort )
+    {
+        this.ignoreSort = ignoreSort;
+    }
+    
+    @Column( name = "D_FILES_COUNT" )
+    @Basic( optional = false )
+    public int getFilesCount()
+    {
+        return filesCount;
+    }
+
+    public void setFilesCount( int filesCount )
+    {
+        this.filesCount = filesCount;
+    }
+
     @Override
     public String toString()
     {
-        return "Description{" + "ID=" + ID + ", type=" + type + ", createdDate=" + createdDate + ", gpsLat=" + gpsLat + ", gpsLng=" + gpsLng + ", gpsAlt=" + gpsAlt + ", locCity=" + locCity + ", locCountry=" + locCountry + ", title=" + title + ", caption=" + caption + ", make=" + make + ", model=" + model + ", updated=" + updated + '}';
+        return "Description{" + "ID=" + ID + ", type=" + type + ", createdDate=" + createdDate + ", gpsLat=" + gpsLat + ", gpsLng=" + gpsLng + ", place=" + place + ", title=" + title + ", make=" + make + ", model=" + model + ", person=" + person + ", updated=" + updated + ", ignoreSort=" + ignoreSort + ", filesCount=" + filesCount + '}';
     }
+    
     // PROTECTED
     // PRIVATE
     private final static long serialVersionUID = 34592348345234L;
     private String ID;
-    private short type;
+    private FilePathType type;
     private Calendar createdDate;
     private Double gpsLat;
     private Double gpsLng;
-    private Double gpsAlt;
-    private String locCity;
-    private String locCountry;
+    private Place place;
     private String title;
-    private String caption;
     private String make;
     private String model;
+    private Person person;
     private boolean updated;
+    private boolean ignoreSort;
+    private int filesCount;
 
     private void init()
     {
+        this.ID = null;
+        this.type = null;
+        this.createdDate = null;
+        this.gpsLat = null;
+        this.gpsLng = null;
+        this.place=null;
+        this.title = null;
+        this.make = null;
+        this.model = null;
+        this.person=null;
+        this.updated = false;
+        this.ignoreSort=false;
+        this.filesCount = 0;
     }
 }

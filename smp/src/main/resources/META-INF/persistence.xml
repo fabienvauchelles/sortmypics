@@ -3,7 +3,7 @@
     <persistence-unit name="pu">
         <provider>org.hibernate.ejb.HibernatePersistence</provider>
         <properties>
-            <property name="hibernate.show_sql" value="true" />
+            <property name="hibernate.show_sql" value="false" />
             <property name="hibernate.connection.driver_class" value="org.h2.Driver" />
             <property name="hibernate.connection.username" value="sa" />
             <property name="hibernate.connection.password" value="sa" />
