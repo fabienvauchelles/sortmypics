@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+<configuration>
+    <thread>
+        <count>5</count>
+    </thread>
+    <exiftool>
+        <path>C:/Program Files (x86)/exiftool-9.24/exiftool.exe</path>
+    </exiftool>
+</configuration>
