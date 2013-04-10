@@ -101,7 +101,7 @@ public class PictureViewerPanel
 
         setBackground( Color.WHITE );
         
-        setPreferredSize( new Dimension( 800 ,
-                                         600 ) );
+        setPreferredSize( new Dimension( 1024 ,
+                                         800 ) );
     }
 }

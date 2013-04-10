@@ -8,16 +8,22 @@ import com.vaushell.rc.BaseJFrame;
 import com.vaushell.rc.errors.ThrowableManager;
 import com.vaushell.rc.popup.PopupDialog;
 import com.vaushell.rc.popup.PopupFrame;
+import com.vaushell.rc.thread.ModalTaskPopup;
 import com.vaushell.smp.editor.FilePathTableModel;
 import com.vaushell.smp.imp.ImportPanel;
 import com.vaushell.smp.model.ContentDAOmanager;
+import com.vaushell.smp.model.Description;
 import com.vaushell.smp.model.FilePath;
+import com.vaushell.smp.model.Place;
+import com.vaushell.smp.places.PlaceViewerPanel;
+import com.vaushell.smp.places.PlacesEditorPanel;
 import com.vaushell.smp.viewer.PictureViewerPanel;
 import com.vaushell.tools.exiftool.ExifToolManager;
 import com.vaushell.tools.images.ImageManager;
 import java.awt.Image;
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import javax.imageio.ImageIO;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
@@ -25,6 +31,7 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import org.apache.commons.configuration.AbstractConfiguration;
 import org.apache.commons.configuration.XMLConfiguration;
+import org.jdesktop.swingx.mapviewer.GeoPosition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -117,6 +124,21 @@ public class MainJFrame
         }
     }
 
+    public AbstractConfiguration getConfig()
+    {
+        return config;
+    }
+
+    public void reloadPlaces( boolean full )
+    {
+        jTBfilePaths.reloadComboContent();
+
+        if ( full )
+        {
+            tmFilePaths.fireTableDataChanged();
+        }
+    }
+
     @SuppressWarnings( "unchecked" )
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents()
@@ -124,14 +146,20 @@ public class MainJFrame
         java.awt.GridBagConstraints gridBagConstraints;
 
         jTLBmain = new javax.swing.JToolBar();
-        jBTimport = new javax.swing.JButton();
-        jBTshowViewer = new javax.swing.JToggleButton();
+        jBTshowPictureViewer = new javax.swing.JToggleButton();
+        jBTshowPlaceViewer = new javax.swing.JToggleButton();
+        jBTsyncGPSplaces = new javax.swing.JButton();
+        jBTsyncPlacesGPS = new javax.swing.JButton();
         jPNLtbEmpty = new javax.swing.JPanel();
-        jSEPcontent = new javax.swing.JSeparator();
         jSPfilePaths = new javax.swing.JScrollPane();
         jTBfilePaths = new com.vaushell.smp.editor.FilePathTable();
         jPNLfooter = new javax.swing.JPanel();
         jLBLfilePathsCount = new javax.swing.JLabel();
+        jMB = new javax.swing.JMenuBar();
+        jMNfile = new javax.swing.JMenu();
+        jMIimport = new javax.swing.JMenuItem();
+        jMNwindow = new javax.swing.JMenu();
+        jMIeditPlaces = new javax.swing.JMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DO_NOTHING_ON_CLOSE);
         getContentPane().setLayout(new java.awt.GridBagLayout());
@@ -139,30 +167,53 @@ public class MainJFrame
         jTLBmain.setFloatable(false);
         jTLBmain.setRollover(true);
 
-        jBTimport.setIcon(new javax.swing.ImageIcon(getClass().getResource("/com/vaushell/smp/icons/btImport.png"))); // NOI18N
-        jBTimport.setText("Import");
-        jBTimport.setToolTipText("Import");
-        jBTimport.setMargin(new java.awt.Insets(2, 2, 2, 2));
-        jBTimport.addActionListener(new java.awt.event.ActionListener()
+        jBTshowPictureViewer.setIcon(new javax.swing.ImageIcon(getClass().getResource("/com/vaushell/smp/icons/btViewer.png"))); // NOI18N
+        jBTshowPictureViewer.setText("Viewer");
+        jBTshowPictureViewer.setToolTipText("Show picture viewer");
+        jBTshowPictureViewer.addActionListener(new java.awt.event.ActionListener()
         {
             public void actionPerformed(java.awt.event.ActionEvent evt)
             {
-                jBTimportActionPerformed(evt);
+                jBTshowPictureViewerActionPerformed(evt);
             }
         });
-        jTLBmain.add(jBTimport);
+        jTLBmain.add(jBTshowPictureViewer);
 
-        jBTshowViewer.setIcon(new javax.swing.ImageIcon(getClass().getResource("/com/vaushell/smp/icons/btViewer.png"))); // NOI18N
-        jBTshowViewer.setText("Viewer");
-        jBTshowViewer.setToolTipText("Viewer");
-        jBTshowViewer.addActionListener(new java.awt.event.ActionListener()
+        jBTshowPlaceViewer.setIcon(new javax.swing.ImageIcon(getClass().getResource("/com/vaushell/smp/icons/btMaps.png"))); // NOI18N
+        jBTshowPlaceViewer.setText("Map");
+        jBTshowPlaceViewer.setToolTipText("Show map");
+        jBTshowPlaceViewer.addActionListener(new java.awt.event.ActionListener()
         {
             public void actionPerformed(java.awt.event.ActionEvent evt)
             {
-                jBTshowViewerActionPerformed(evt);
+                jBTshowPlaceViewerActionPerformed(evt);
             }
         });
-        jTLBmain.add(jBTshowViewer);
+        jTLBmain.add(jBTshowPlaceViewer);
+
+        jBTsyncGPSplaces.setIcon(new javax.swing.ImageIcon(getClass().getResource("/com/vaushell/smp/icons/btSync.png"))); // NOI18N
+        jBTsyncGPSplaces.setText("GPS > Places");
+        jBTsyncGPSplaces.setToolTipText("Find places within GPS coordinate");
+        jBTsyncGPSplaces.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
+                jBTsyncGPSplacesActionPerformed(evt);
+            }
+        });
+        jTLBmain.add(jBTsyncGPSplaces);
+
+        jBTsyncPlacesGPS.setIcon(new javax.swing.ImageIcon(getClass().getResource("/com/vaushell/smp/icons/btSync.png"))); // NOI18N
+        jBTsyncPlacesGPS.setText("GPS > Places");
+        jBTsyncPlacesGPS.setToolTipText("Copy places to wrong GPS coordinate");
+        jBTsyncPlacesGPS.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
+                jBTsyncPlacesGPSActionPerformed(evt);
+            }
+        });
+        jTLBmain.add(jBTsyncPlacesGPS);
 
         jPNLtbEmpty.setLayout(new java.awt.GridBagLayout());
         jTLBmain.add(jPNLtbEmpty);
@@ -173,12 +224,6 @@ public class MainJFrame
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         getContentPane().add(jTLBmain, gridBagConstraints);
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
-        gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
-        getContentPane().add(jSEPcontent, gridBagConstraints);
 
         jTBfilePaths.setModel(tmFilePaths);
         jTBfilePaths.setAutoResizeMode(javax.swing.JTable.AUTO_RESIZE_ALL_COLUMNS);
@@ -209,30 +254,94 @@ public class MainJFrame
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         getContentPane().add(jPNLfooter, gridBagConstraints);
 
+        jMNfile.setText("File");
+
+        jMIimport.setText("Import");
+        jMIimport.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
+                jMIimportActionPerformed(evt);
+            }
+        });
+        jMNfile.add(jMIimport);
+
+        jMB.add(jMNfile);
+
+        jMNwindow.setText("Window");
+
+        jMIeditPlaces.setText("Edit places");
+        jMIeditPlaces.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
+                jMIeditPlacesActionPerformed(evt);
+            }
+        });
+        jMNwindow.add(jMIeditPlaces);
+
+        jMB.add(jMNwindow);
+
+        setJMenuBar(jMB);
+
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    private void jBTimportActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jBTimportActionPerformed
-    {//GEN-HEADEREND:event_jBTimportActionPerformed
+    private void jBTshowPictureViewerActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jBTshowPictureViewerActionPerformed
+    {//GEN-HEADEREND:event_jBTshowPictureViewerActionPerformed
+
+        showOrHidePictureViewer();
+
+    }//GEN-LAST:event_jBTshowPictureViewerActionPerformed
+
+    private void jMIimportActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jMIimportActionPerformed
+    {//GEN-HEADEREND:event_jMIimportActionPerformed
 
         new PopupDialog( this ,
                          new ImportPanel( this ) ).setVisible( true );
 
-    }//GEN-LAST:event_jBTimportActionPerformed
+    }//GEN-LAST:event_jMIimportActionPerformed
 
-    private void jBTshowViewerActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jBTshowViewerActionPerformed
-    {//GEN-HEADEREND:event_jBTshowViewerActionPerformed
+    private void jBTshowPlaceViewerActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jBTshowPlaceViewerActionPerformed
+    {//GEN-HEADEREND:event_jBTshowPlaceViewerActionPerformed
 
-        showOrHideViewer();
+        showOrHidePlaceViewer();
 
-    }//GEN-LAST:event_jBTshowViewerActionPerformed
+    }//GEN-LAST:event_jBTshowPlaceViewerActionPerformed
+
+    private void jMIeditPlacesActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jMIeditPlacesActionPerformed
+    {//GEN-HEADEREND:event_jMIeditPlacesActionPerformed
+
+        showOrHideEditPlaces();
+
+    }//GEN-LAST:event_jMIeditPlacesActionPerformed
+
+    private void jBTsyncGPSplacesActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jBTsyncGPSplacesActionPerformed
+    {//GEN-HEADEREND:event_jBTsyncGPSplacesActionPerformed
+
+        syncGPSplaces();
+
+    }//GEN-LAST:event_jBTsyncGPSplacesActionPerformed
+
+    private void jBTsyncPlacesGPSActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jBTsyncPlacesGPSActionPerformed
+    {//GEN-HEADEREND:event_jBTsyncPlacesGPSActionPerformed
+
+        syncPlacesGPS();
+
+    }//GEN-LAST:event_jBTsyncPlacesGPSActionPerformed
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton jBTimport;
-    private javax.swing.JToggleButton jBTshowViewer;
+    private javax.swing.JToggleButton jBTshowPictureViewer;
+    private javax.swing.JToggleButton jBTshowPlaceViewer;
+    private javax.swing.JButton jBTsyncGPSplaces;
+    private javax.swing.JButton jBTsyncPlacesGPS;
     private javax.swing.JLabel jLBLfilePathsCount;
+    private javax.swing.JMenuBar jMB;
+    private javax.swing.JMenuItem jMIeditPlaces;
+    private javax.swing.JMenuItem jMIimport;
+    private javax.swing.JMenu jMNfile;
+    private javax.swing.JMenu jMNwindow;
     private javax.swing.JPanel jPNLfooter;
     private javax.swing.JPanel jPNLtbEmpty;
-    private javax.swing.JSeparator jSEPcontent;
     private javax.swing.JScrollPane jSPfilePaths;
     private com.vaushell.smp.editor.FilePathTable jTBfilePaths;
     private javax.swing.JToolBar jTLBmain;
@@ -242,8 +351,12 @@ public class MainJFrame
     private static Logger logger = LoggerFactory.getLogger( MainJFrame.class );
     private FilePathTableModel tmFilePaths;
     private AbstractConfiguration config;
-    private PictureViewerPanel viewerPanel;
-    private PopupFrame viewerFrame;
+    private PictureViewerPanel pictureViewerPanel;
+    private PopupFrame pictureViewerFrame;
+    private PlacesEditorPanel placesEditorPanel;
+    private PopupFrame placesEditorFrame;
+    private PlaceViewerPanel placeViewerPanel;
+    private PopupFrame placeViewerFrame;
 
     private void init()
     {
@@ -266,26 +379,51 @@ public class MainJFrame
     {
         loadAllFilePaths();
 
-        this.viewerPanel = new PictureViewerPanel( this );
+        // Viewer
+        this.pictureViewerPanel = new PictureViewerPanel( this );
 
-        this.viewerFrame = new PopupFrame( this ,
-                                           this.viewerPanel ,
-                                           true )
+        this.pictureViewerFrame = new PopupFrame( this ,
+                                                  this.pictureViewerPanel ,
+                                                  true )
         {
             @Override
             public void close()
             {
                 super.close();
-                
-                jBTshowViewer.setSelected( false );
+
+                jBTshowPictureViewer.setSelected( false );
             }
         };
 
+        // Viewer
+        this.placeViewerPanel = new PlaceViewerPanel( this );
+
+        this.placeViewerFrame = new PopupFrame( this ,
+                                                this.placeViewerPanel ,
+                                                true )
+        {
+            @Override
+            public void close()
+            {
+                super.close();
+
+                jBTshowPlaceViewer.setSelected( false );
+            }
+        };
+
+        // Edit places
+        this.placesEditorPanel = new PlacesEditorPanel( this );
+
+        this.placesEditorFrame = new PopupFrame( this ,
+                                                 this.placesEditorPanel ,
+                                                 true );
+
+        // Filepath
         jTBfilePaths.getSelectionModel().addListSelectionListener( new ListSelectionListener()
         {
             public void valueChanged( ListSelectionEvent e )
             {
-                if ( viewerFrame.isVisible() )
+                if ( pictureViewerFrame.isVisible() )
                 {
                     SwingUtilities.invokeLater( new Runnable()
                     {
@@ -293,7 +431,26 @@ public class MainJFrame
                         {
                             try
                             {
-                                updateImageInViewer();
+                                updatePictureInViewer();
+                            }
+                            catch( Throwable th )
+                            {
+                                logger.error( th.getMessage() ,
+                                              th );
+                            }
+                        }
+                    } );
+                }
+
+                if ( placeViewerFrame.isVisible() )
+                {
+                    SwingUtilities.invokeLater( new Runnable()
+                    {
+                        public void run()
+                        {
+                            try
+                            {
+                                updatePlaceInViewer();
                             }
                             catch( Throwable th )
                             {
@@ -318,19 +475,19 @@ public class MainJFrame
         }
     }
 
-    private void showOrHideViewer()
+    private void showOrHidePictureViewer()
     {
         try
         {
-            if ( jBTshowViewer.isSelected() )
+            if ( jBTshowPictureViewer.isSelected() )
             {
-                updateImageInViewer();
+                updatePictureInViewer();
 
-                viewerFrame.setVisible( true );
+                pictureViewerFrame.setVisible( true );
             }
             else
             {
-                viewerFrame.setVisible( false );
+                pictureViewerFrame.setVisible( false );
             }
         }
         catch( Throwable th )
@@ -340,31 +497,210 @@ public class MainJFrame
         }
     }
 
-    private void updateImageInViewer()
+    private void showOrHidePlaceViewer()
+    {
+        try
+        {
+            if ( jBTshowPlaceViewer.isSelected() )
+            {
+                updatePlaceInViewer();
+
+                placeViewerFrame.setVisible( true );
+            }
+            else
+            {
+                placeViewerFrame.setVisible( false );
+            }
+        }
+        catch( Throwable th )
+        {
+            logger.error( th.getMessage() ,
+                          th );
+        }
+    }
+
+    private void showOrHideEditPlaces()
+    {
+        placesEditorPanel.cachePicturesPositions();
+
+        placesEditorFrame.setVisible( true );
+    }
+
+    private void updatePictureInViewer()
             throws IOException
     {
         int rowView = jTBfilePaths.getSelectedRow();
-        final File file;
         if ( rowView >= 0 )
         {
             int rowModel = jTBfilePaths.convertRowIndexToModel( rowView );
 
             FilePath fp = tmFilePaths.getAtRow( rowModel );
 
-            file = fp.getFile();
+            File file = fp.getFile();
 
             if ( file.exists() )
             {
-                viewerPanel.setImage( ImageIO.read( file ) );
+                pictureViewerPanel.setImage( ImageIO.read( file ) );
             }
             else
             {
-                viewerPanel.setImage( null );
+                pictureViewerPanel.setImage( null );
             }
         }
         else
         {
-            viewerPanel.setImage( null );
+            pictureViewerPanel.setImage( null );
         }
+    }
+
+    private void updatePlaceInViewer()
+    {
+        int rowView = jTBfilePaths.getSelectedRow();
+        if ( rowView >= 0 )
+        {
+            int rowModel = jTBfilePaths.convertRowIndexToModel( rowView );
+
+            FilePath fp = tmFilePaths.getAtRow( rowModel );
+
+            Double gpsLat = fp.getDescription().getGPSlat();
+            Double gpsLng = fp.getDescription().getGPSlng();
+
+            if ( gpsLat != null && gpsLng != null )
+            {
+                placeViewerPanel.setAddressLocation( new GeoPosition( gpsLat ,
+                                                                      gpsLng ) );
+            }
+            else
+            {
+                placeViewerPanel.setAddressLocation( null );
+            }
+        }
+        else
+        {
+            placeViewerPanel.setAddressLocation( null );
+        }
+    }
+
+    private void syncGPSplaces()
+    {
+        new PopupDialog( this ,
+                         new ModalTaskPopup( this ,
+                                             "Find" ,
+                                             null )
+        {
+            @Override
+            public void run()
+            {
+                try
+                {
+                    List<Place> places = ContentDAOmanager.getInstance().getAllPlaces();
+                    List<Description> descriptions = ContentDAOmanager.getInstance().getAllDescriptionsWithGPS();
+
+                    setMax( descriptions.size() );
+
+                    int num = 0;
+                    for ( Description d : descriptions )
+                    {
+                        setLabel( "Process " + num + "/" + descriptions.size() );
+
+                        for ( Place place : places )
+                        {
+                            double R = 6371.0;
+
+                            double dLat = Math.toRadians( place.getGPSlat() - d.getGPSlat() );
+                            double dLng = Math.toRadians( place.getGPSlng() - d.getGPSlng() );
+
+                            double lat1 = Math.toRadians( place.getGPSlat() );
+                            double lat2 = Math.toRadians( d.getGPSlat() );
+
+                            double a = Math.sin( dLat / 2.0 ) * Math.sin( dLat / 2 )
+                                       + Math.sin( dLng / 2 ) * Math.sin( dLng / 2 ) * Math.cos( lat1 ) * Math.cos( lat2 );
+                            double c = 2 * Math.atan2( Math.sqrt( a ) ,
+                                                       Math.sqrt( 1 - a ) );
+                            double e = R * c;
+
+                            if ( e <= place.getRadius() )
+                            {
+                                d.setPlace( place );
+
+                                ContentDAOmanager.getInstance().updateDescription( d );
+                                break;
+                            }
+                        }
+
+                        ++num;
+                    }
+
+                    tmFilePaths.fireTableDataChanged();
+                }
+                catch( Throwable th )
+                {
+                    logger.error( th.getMessage() ,
+                                  th );
+                }
+            }
+        } ).setVisible( true );
+    }
+
+    private void syncPlacesGPS()
+    {
+        new PopupDialog( this ,
+                         new ModalTaskPopup( this ,
+                                             "Copy" ,
+                                             null )
+        {
+            @Override
+            public void run()
+            {
+                try
+                {
+                    List<Description> descriptions = ContentDAOmanager.getInstance().getAllDescriptionsWithGPS();
+
+                    setMax( descriptions.size() );
+
+                    int num = 0;
+                    for ( Description d : descriptions )
+                    {
+                        setLabel( "Process " + num + "/" + descriptions.size() );
+
+                        if ( d.getPlace() != null )
+                        {
+                            double R = 6371.0;
+
+                            double dLat = Math.toRadians( d.getPlace().getGPSlat() - d.getGPSlat() );
+                            double dLng = Math.toRadians( d.getPlace().getGPSlng() - d.getGPSlng() );
+
+                            double lat1 = Math.toRadians( d.getPlace().getGPSlat() );
+                            double lat2 = Math.toRadians( d.getGPSlat() );
+
+                            double a = Math.sin( dLat / 2.0 ) * Math.sin( dLat / 2 )
+                                       + Math.sin( dLng / 2 ) * Math.sin( dLng / 2 ) * Math.cos( lat1 ) * Math.cos( lat2 );
+                            double c = 2 * Math.atan2( Math.sqrt( a ) ,
+                                                       Math.sqrt( 1 - a ) );
+                            double e = R * c;
+
+                            if ( e > d.getPlace().getRadius() )
+                            {
+                                d.setGPSlat( d.getPlace().getGPSlat() );
+                                d.setGPSlng( d.getPlace().getGPSlng() );
+                                d.setUpdated( true );
+
+                                ContentDAOmanager.getInstance().updateDescription( d );
+                                break;
+                            }
+                        }
+
+                        ++num;
+                    }
+
+                    tmFilePaths.fireTableDataChanged();
+                }
+                catch( Throwable th )
+                {
+                    logger.error( th.getMessage() ,
+                                  th );
+                }
+            }
+        } ).setVisible( true );
     }
 }

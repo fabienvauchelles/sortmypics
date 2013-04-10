@@ -6,4 +6,11 @@
     <exiftool>
         <path>C:/Program Files (x86)/exiftool-9.24/exiftool.exe</path>
     </exiftool>
+    <openstreetmap>
+        <tiles-pattern>http://tile.openstreetmap.org/%d/%d/%d.png</tiles-pattern>
+    </openstreetmap>
+    <nominatim>
+        <url>http://nominatim.openstreetmap.org</url>
+        <email>contact@vaushell.com</email>
+    </nominatim>
 </configuration>

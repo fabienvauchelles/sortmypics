@@ -202,7 +202,7 @@ public class FilePathTableModel
             {
                 return fp.getDescription().isIgnoreSort();
             }
-                
+
             case 3:
             {
                 return fp.getDescription().getFilesCount();
@@ -288,7 +288,7 @@ public class FilePathTableModel
     {
         FilePath fp = fps.get( row );
 
-        boolean update = false;
+        boolean modified = false;
 
         switch( column )
         {
@@ -299,7 +299,7 @@ public class FilePathTableModel
                 if ( !value.equals( fp.getDescription().isIgnoreSort() ) )
                 {
                     fp.getDescription().setIgnoreSort( value );
-                    update = true;
+                    modified = true;
                 }
 
                 break;
@@ -314,7 +314,8 @@ public class FilePathTableModel
                     if ( value != null )
                     {
                         fp.getDescription().setGPSlat( value );
-                        update = true;
+                        fp.getDescription().setUpdated( true );
+                        modified = true;
                     }
                 }
                 else
@@ -322,7 +323,8 @@ public class FilePathTableModel
                     if ( !fp.getDescription().getGPSlat().equals( value ) )
                     {
                         fp.getDescription().setGPSlat( value );
-                        update = true;
+                        fp.getDescription().setUpdated( true );
+                        modified = true;
                     }
                 }
 
@@ -338,7 +340,8 @@ public class FilePathTableModel
                     if ( value != null )
                     {
                         fp.getDescription().setGPSlng( value );
-                        update = true;
+                        fp.getDescription().setUpdated( true );
+                        modified = true;
                     }
                 }
                 else
@@ -346,7 +349,32 @@ public class FilePathTableModel
                     if ( !fp.getDescription().getGPSlng().equals( value ) )
                     {
                         fp.getDescription().setGPSlng( value );
-                        update = true;
+                        fp.getDescription().setUpdated( true );
+                        modified = true;
+                    }
+                }
+
+                break;
+            }
+
+            case 9:
+            {
+                Place value = (Place) aValue;
+
+                if ( fp.getDescription().getPlace() == null )
+                {
+                    if ( value != null )
+                    {
+                        fp.getDescription().setPlace( value );
+                        modified = true;
+                    }
+                }
+                else
+                {
+                    if ( !fp.getDescription().getPlace().equals( value ) )
+                    {
+                        fp.getDescription().setPlace( value );
+                        modified = true;
                     }
                 }
 
@@ -362,7 +390,8 @@ public class FilePathTableModel
                     if ( value != null )
                     {
                         fp.getDescription().setTitle( value );
-                        update = true;
+                        fp.getDescription().setUpdated( true );
+                        modified = true;
                     }
                 }
                 else
@@ -370,7 +399,8 @@ public class FilePathTableModel
                     if ( !fp.getDescription().getTitle().equals( value ) )
                     {
                         fp.getDescription().setTitle( value );
-                        update = true;
+                        fp.getDescription().setUpdated( true );
+                        modified = true;
                     }
                 }
 
@@ -386,7 +416,8 @@ public class FilePathTableModel
                     if ( value != null )
                     {
                         fp.getDescription().setMake( value );
-                        update = true;
+                        fp.getDescription().setUpdated( true );
+                        modified = true;
                     }
                 }
                 else
@@ -394,7 +425,8 @@ public class FilePathTableModel
                     if ( !fp.getDescription().getMake().equals( value ) )
                     {
                         fp.getDescription().setMake( value );
-                        update = true;
+                        fp.getDescription().setUpdated( true );
+                        modified = true;
                     }
                 }
 
@@ -410,7 +442,8 @@ public class FilePathTableModel
                     if ( value != null )
                     {
                         fp.getDescription().setModel( value );
-                        update = true;
+                        fp.getDescription().setUpdated( true );
+                        modified = true;
                     }
                 }
                 else
@@ -418,7 +451,8 @@ public class FilePathTableModel
                     if ( !fp.getDescription().getModel().equals( value ) )
                     {
                         fp.getDescription().setModel( value );
-                        update = true;
+                        fp.getDescription().setUpdated( true );
+                        modified = true;
                     }
                 }
 
@@ -426,10 +460,8 @@ public class FilePathTableModel
             }
         }
 
-        if ( update )
+        if ( modified )
         {
-            fp.getDescription().setUpdated( true );
-
             ContentDAOmanager.getInstance().updateDescription( fp.getDescription() );
 
             fireTableDataChanged();
@@ -479,7 +511,7 @@ public class FilePathTableModel
             "Longitude" , Double.class , true,
         } ,
         {
-            "Place" , String.class , false,
+            "Place" , String.class , true,
         } ,
         {
             "Title" , String.class , true,

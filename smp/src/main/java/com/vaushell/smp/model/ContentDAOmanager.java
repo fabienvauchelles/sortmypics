@@ -8,6 +8,7 @@ import com.vaushell.tools.Reference;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,6 +20,7 @@ import javax.persistence.NonUniqueResultException;
 import javax.persistence.Persistence;
 import javax.persistence.Query;
 import org.apache.commons.io.FileUtils;
+import org.jdesktop.swingx.mapviewer.GeoPosition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,6 +36,7 @@ public class ContentDAOmanager
         return ContentDAOmanagerHolder.INSTANCE;
     }
 
+    // <editor-fold defaultstate="collapsed" desc="Init">
     public void start()
             throws IOException
     {
@@ -79,7 +82,9 @@ public class ContentDAOmanager
             emf.close();
         }
     }
+    // </editor-fold>
 
+    // <editor-fold defaultstate="collapsed" desc="Description">
     public Description getDescriptionByID( String ID )
     {
         if ( ID == null )
@@ -96,6 +101,95 @@ public class ContentDAOmanager
                         ID );
     }
 
+    public List<Description> getAllDescriptionsWithGPS()
+    {
+        if ( logger.isDebugEnabled() )
+        {
+            logger.debug( "[ContentDAOmanager] getAllDescriptionsWithGPS" );
+        }
+
+        Query q = em.createQuery( "from Description d where d.GPSlat<>null and d.GPSlng<>null" );
+        return q.getResultList();
+    }
+
+    public void addDescription( Description description )
+    {
+        if ( description == null )
+        {
+            throw new NullPointerException();
+        }
+
+        if ( logger.isDebugEnabled() )
+        {
+            logger.debug( "[ContentDAOmanager] addDescription : description=" + description );
+        }
+
+        waitAndLock();
+
+        EntityTransaction transac = em.getTransaction();
+        try
+        {
+            transac.begin();
+
+            em.persist( description );
+
+            transac.commit();
+        }
+        catch( RuntimeException ex )
+        {
+            if ( transac != null )
+            {
+                transac.rollback();
+            }
+
+            throw ex;
+        }
+        finally
+        {
+            releaseLock();
+        }
+    }
+
+    public void updateDescription( Description description )
+    {
+        if ( description == null )
+        {
+            throw new NullPointerException();
+        }
+
+        if ( logger.isDebugEnabled() )
+        {
+            logger.debug( "[ContentDAOmanager] updateDescription : description=" + description );
+        }
+
+        waitAndLock();
+
+        EntityTransaction transac = em.getTransaction();
+        try
+        {
+            transac.begin();
+
+            em.merge( description );
+
+            transac.commit();
+        }
+        catch( RuntimeException ex )
+        {
+            if ( transac != null )
+            {
+                transac.rollback();
+            }
+
+            throw ex;
+        }
+        finally
+        {
+            releaseLock();
+        }
+    }
+    // </editor-fold>
+
+    // <editor-fold defaultstate="collapsed" desc="FilePath">
     public List<FilePath> getAllFilePathsAndDescription()
     {
         if ( logger.isDebugEnabled() )
@@ -135,7 +229,7 @@ public class ContentDAOmanager
             transac.begin();
 
             em.persist( fp );
-            
+
             Description d = fp.getDescription();
             d.setFilesCount( d.getFilesCount() + 1 );
             em.merge( d );
@@ -232,17 +326,31 @@ public class ContentDAOmanager
             return null;
         }
     }
+    // </editor-fold>
 
-    public void addDescription( Description description )
+    // <editor-fold defaultstate="collapsed" desc="Place">
+    public List<Place> getAllPlaces()
     {
-        if ( description == null )
+        if ( logger.isDebugEnabled() )
+        {
+            logger.debug( "[ContentDAOmanager] getAllPlaces" );
+        }
+
+        Query q = em.createQuery( "from Place p order by p.name" );
+
+        return q.getResultList();
+    }
+
+    public void addPlace( Place place )
+    {
+        if ( place == null )
         {
             throw new NullPointerException();
         }
 
         if ( logger.isDebugEnabled() )
         {
-            logger.debug( "[ContentDAOmanager] addDescription : description=" + description );
+            logger.debug( "[ContentDAOmanager] addPlace : place=" + place );
         }
 
         waitAndLock();
@@ -252,7 +360,7 @@ public class ContentDAOmanager
         {
             transac.begin();
 
-            em.persist( description );
+            em.persist( place );
 
             transac.commit();
         }
@@ -271,16 +379,16 @@ public class ContentDAOmanager
         }
     }
 
-    public void updateDescription( Description description )
+    public void updatePlace( Place place )
     {
-        if ( description == null )
+        if ( place == null )
         {
             throw new NullPointerException();
         }
 
         if ( logger.isDebugEnabled() )
         {
-            logger.debug( "[ContentDAOmanager] updateDescription : description=" + description );
+            logger.debug( "[ContentDAOmanager] updatePlace : place=" + place );
         }
 
         waitAndLock();
@@ -290,7 +398,7 @@ public class ContentDAOmanager
         {
             transac.begin();
 
-            em.merge( description );
+            em.merge( place );
 
             transac.commit();
         }
@@ -308,6 +416,55 @@ public class ContentDAOmanager
             releaseLock();
         }
     }
+
+    public void deletePlace( Place place )
+    {
+        if ( place == null )
+        {
+            throw new NullPointerException();
+        }
+
+        if ( logger.isDebugEnabled() )
+        {
+            logger.debug( "[ContentDAOmanager] removePlace : place=" + place );
+        }
+
+        waitAndLock();
+
+        EntityTransaction transac = em.getTransaction();
+        try
+        {
+            transac.begin();
+
+            Query q = em.createQuery( "from Description d where d.place=:place" );
+            q.setParameter( "place" ,
+                            place );
+            List<Description> ds = q.getResultList();
+            for ( Description d : ds )
+            {
+                d.setPlace( null );
+                em.merge( d );
+            }
+
+            em.remove( place );
+
+            transac.commit();
+        }
+        catch( RuntimeException ex )
+        {
+            if ( transac != null )
+            {
+                transac.rollback();
+            }
+
+            throw ex;
+        }
+        finally
+        {
+            releaseLock();
+        }
+    }
+    // </editor-fold>
     // PRIVATE
     private final static Logger logger = LoggerFactory.getLogger( ContentDAOmanager.class );
     private EntityManagerFactory emf;

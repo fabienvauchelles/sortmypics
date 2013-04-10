@@ -76,6 +76,21 @@
             <artifactId>fast-md5</artifactId>
             <version>2.5</version>
         </dependency>
+        <dependency>
+            <groupId>org.swinglabs</groupId>
+            <artifactId>swingx-ws</artifactId>
+            <version>1.0</version>
+        </dependency>
+        <dependency>
+            <groupId>fr.dudie</groupId>
+            <artifactId>nominatim-api</artifactId>
+            <version>2.0.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.swinglabs</groupId>
+            <artifactId>swing-layout</artifactId>
+            <version>1.0.3</version>
+        </dependency>
     </dependencies>
     <repositories>
         <repository>
