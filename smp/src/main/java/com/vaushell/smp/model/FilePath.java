@@ -6,6 +6,7 @@ package com.vaushell.smp.model;
 
 import java.io.File;
 import java.io.Serializable;
+import java.util.Calendar;
 import javax.persistence.Basic;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -32,7 +33,7 @@ public class FilePath
                      Description description )
     {
         this.ID = Long.MIN_VALUE;
-        this.path = path;
+        this.sourcePath = path;
         this.name = name;
         this.description = description;
 
@@ -61,14 +62,58 @@ public class FilePath
 
     @Column( name = "FP_PATH" , length = 2048 )
     @Basic( optional = false )
-    public String getPath()
+    public String getSourcePath()
     {
-        return path;
+        return sourcePath;
     }
 
-    public void setPath( String path )
+    public void setSourcePath( String getSourcePath )
     {
-        this.path = path;
+        this.sourcePath = getSourcePath;
+    }
+
+    @Transient
+    public String getDestinationPath()
+    {
+        if ( description == null )
+        {
+            return null;
+        }
+
+        Calendar c = description.getCreatedDate();
+        String title = description.getTitle();
+        if ( c != null )
+        {
+            if ( title != null )
+            {
+                return String.format( "%04d%s%02d%02d - %s" ,
+                                      c.get( Calendar.YEAR ) ,
+                                      File.separator ,
+                                      c.get( Calendar.MONTH ) + 1 ,
+                                      c.get( Calendar.DAY_OF_MONTH ) ,
+                                      title );
+            }
+            else
+            {
+                return String.format( "%04d%s%02d%02d" ,
+                                      c.get( Calendar.YEAR ) ,
+                                      File.separator ,
+                                      c.get( Calendar.MONTH ) + 1 ,
+                                      c.get( Calendar.DAY_OF_MONTH ) );
+            }
+        }
+        else
+        {
+            if ( title != null )
+            {
+                return String.format( "%s" ,
+                                      title );
+            }
+            else
+            {
+                return null;
+            }
+        }
     }
 
     @Column( name = "FP_NAME" , length = 1024 )
@@ -94,23 +139,24 @@ public class FilePath
     {
         this.description = description;
     }
-    
+
     @Transient
     public File getFile()
     {
-        return new File( getPath(), getName() );
+        return new File( getSourcePath() ,
+                         getName() );
     }
 
     @Override
     public String toString()
     {
-        return "FilePath{" + "ID=" + ID + ", path=" + path + ", name=" + name + ", description=" + description + '}';
+        return "FilePath{" + "ID=" + ID + ", sourcePath=" + sourcePath + ", name=" + name + ", description=" + description + '}';
     }
     // PROTECTED
     // PRIVATE
     private final static long serialVersionUID = 321491238345234345L;
     private Long ID;
-    private String path;
+    private String sourcePath;
     private String name;
     private Description description;
 

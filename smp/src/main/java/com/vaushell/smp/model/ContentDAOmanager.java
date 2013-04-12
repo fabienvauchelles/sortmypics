@@ -8,7 +8,6 @@ import com.vaushell.tools.Reference;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,7 +19,6 @@ import javax.persistence.NonUniqueResultException;
 import javax.persistence.Persistence;
 import javax.persistence.Query;
 import org.apache.commons.io.FileUtils;
-import org.jdesktop.swingx.mapviewer.GeoPosition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -85,22 +83,6 @@ public class ContentDAOmanager
     // </editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc="Description">
-    public Description getDescriptionByID( String ID )
-    {
-        if ( ID == null )
-        {
-            throw new NullPointerException();
-        }
-
-        if ( logger.isDebugEnabled() )
-        {
-            logger.debug( "[ContentDAOmanager] getDescriptionByID : ID=" + ID );
-        }
-
-        return em.find( Description.class ,
-                        ID );
-    }
-
     public List<Description> getAllDescriptionsWithGPS()
     {
         if ( logger.isDebugEnabled() )
@@ -108,41 +90,13 @@ public class ContentDAOmanager
             logger.debug( "[ContentDAOmanager] getAllDescriptionsWithGPS" );
         }
 
-        Query q = em.createQuery( "from Description d where d.GPSlat<>null and d.GPSlng<>null" );
-        return q.getResultList();
-    }
-
-    public void addDescription( Description description )
-    {
-        if ( description == null )
-        {
-            throw new NullPointerException();
-        }
-
-        if ( logger.isDebugEnabled() )
-        {
-            logger.debug( "[ContentDAOmanager] addDescription : description=" + description );
-        }
-
         waitAndLock();
 
-        EntityTransaction transac = em.getTransaction();
         try
         {
-            transac.begin();
+            Query q = em.createQuery( "from Description d where d.GPSlat<>null and d.GPSlng<>null" );
 
-            em.persist( description );
-
-            transac.commit();
-        }
-        catch( RuntimeException ex )
-        {
-            if ( transac != null )
-            {
-                transac.rollback();
-            }
-
-            throw ex;
+            return q.getResultList();
         }
         finally
         {
@@ -171,6 +125,8 @@ public class ContentDAOmanager
 
             em.merge( description );
 
+            em.flush();
+
             transac.commit();
         }
         catch( RuntimeException ex )
@@ -197,28 +153,40 @@ public class ContentDAOmanager
             logger.debug( "[ContentDAOmanager] getAllFilePathsAndDescription" );
         }
 
-        Query q = em.createQuery( "from FilePath fp order by fp.path, fp.name" );
-        List<FilePath> fps = q.getResultList();
+        waitAndLock();
 
-        // Links are automatically build (same description object between filepath)
-        for ( FilePath fp : fps )
+        try
         {
-            fp.getDescription();
-        }
+            Query q = em.createQuery( "from FilePath fp order by fp.sourcePath, fp.name" );
+            List<FilePath> fps = q.getResultList();
 
-        return fps;
+            // Links are automatically build (same description object between filepath)
+            for ( FilePath fp : fps )
+            {
+                fp.getDescription();
+            }
+
+            return fps;
+        }
+        finally
+        {
+            releaseLock();
+        }
     }
 
-    public void addFilePath( FilePath fp )
+    public FilePath createFilePathAndDescriptionIfNecessary( FilePath newFilePath ,
+                                                             Description newDescription )
     {
-        if ( fp == null )
+        if ( newFilePath == null || newDescription == null )
         {
             throw new NullPointerException();
         }
 
         if ( logger.isDebugEnabled() )
         {
-            logger.debug( "[ContentDAOmanager] addFilePath : fp=" + fp );
+            logger.
+                    debug(
+                    "[ContentDAOmanager] createFilePathAndDescriptionIfNecessary : newFilePath=" + newFilePath + " / newDescription=" + newDescription );
         }
 
         waitAndLock();
@@ -228,13 +196,60 @@ public class ContentDAOmanager
         {
             transac.begin();
 
-            em.persist( fp );
+            Description oldDescription = (Description) em.find( Description.class ,
+                                                                newDescription.getID() );
+            if ( oldDescription != null )
+            {
+                Query qFilePath = em.
+                        createQuery(
+                        "select count(fp) from FilePath fp where fp.sourcePath=:sourcePath and fp.name=:name and fp.description=:description" );
+                qFilePath.setParameter( "sourcePath" ,
+                                        newFilePath.getSourcePath() );
+                qFilePath.setParameter( "name" ,
+                                        newFilePath.getName() );
+                qFilePath.setParameter( "description" ,
+                                        oldDescription );
 
-            Description d = fp.getDescription();
-            d.setFilesCount( d.getFilesCount() + 1 );
-            em.merge( d );
+                Long count = (Long) qFilePath.getSingleResult();
 
-            transac.commit();
+                if ( count > 0 )
+                {
+                    em.flush();
+
+                    transac.commit();
+
+                    return null;
+                }
+                else
+                {
+                    oldDescription.setFilesCount( oldDescription.getFilesCount() + 1 );
+                    em.merge( oldDescription );
+                    em.flush();
+
+                    newFilePath.setDescription( oldDescription );
+
+                    em.persist( newFilePath );
+
+                    em.flush();
+
+                    transac.commit();
+
+                    return newFilePath;
+                }
+            }
+            else
+            {
+                newDescription.setFilesCount( 1 );
+                em.persist( newDescription );
+                em.flush();
+
+                em.persist( newFilePath );
+                em.flush();
+
+                transac.commit();
+
+                return newFilePath;
+            }
         }
         catch( RuntimeException ex )
         {
@@ -272,6 +287,8 @@ public class ContentDAOmanager
 
             em.merge( fp );
 
+            em.flush();
+
             transac.commit();
         }
         catch( RuntimeException ex )
@@ -288,44 +305,6 @@ public class ContentDAOmanager
             releaseLock();
         }
     }
-
-    public FilePath getFilePathByNameAndDescription( String path ,
-                                                     String name ,
-                                                     Description d )
-    {
-        if ( path == null || d == null )
-        {
-            throw new NullPointerException();
-        }
-
-        if ( logger.isDebugEnabled() )
-        {
-            logger.
-                    debug(
-                    "[ContentDAOmanager] getFilePathByPathAndDescription() : path=" + path + " / name=" + name + " / d=" + d );
-        }
-
-        Query q = em.createQuery( "from FilePath fp where fp.path=:path and fp.name=:name and fp.description=:description" );
-        q.setParameter( "path" ,
-                        path );
-        q.setParameter( "name" ,
-                        name );
-        q.setParameter( "description" ,
-                        d );
-
-        try
-        {
-            return (FilePath) q.getSingleResult();
-        }
-        catch( NoResultException ex )
-        {
-            return null;
-        }
-        catch( NonUniqueResultException ex )
-        {
-            return null;
-        }
-    }
     // </editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc="Place">
@@ -336,9 +315,18 @@ public class ContentDAOmanager
             logger.debug( "[ContentDAOmanager] getAllPlaces" );
         }
 
-        Query q = em.createQuery( "from Place p order by p.name" );
+        waitAndLock();
 
-        return q.getResultList();
+        try
+        {
+            Query q = em.createQuery( "from Place p order by p.name" );
+
+            return q.getResultList();
+        }
+        finally
+        {
+            releaseLock();
+        }
     }
 
     public void addPlace( Place place )
@@ -361,6 +349,8 @@ public class ContentDAOmanager
             transac.begin();
 
             em.persist( place );
+
+            em.flush();
 
             transac.commit();
         }
@@ -399,6 +389,8 @@ public class ContentDAOmanager
             transac.begin();
 
             em.merge( place );
+
+            em.flush();
 
             transac.commit();
         }
@@ -448,6 +440,55 @@ public class ContentDAOmanager
 
             em.remove( place );
 
+            em.flush();
+
+            transac.commit();
+        }
+        catch( RuntimeException ex )
+        {
+            if ( transac != null )
+            {
+                transac.rollback();
+            }
+
+            throw ex;
+        }
+        finally
+        {
+            releaseLock();
+        }
+    }
+
+    public void deleteAllDescriptions()
+    {
+        if ( logger.isDebugEnabled() )
+        {
+            logger.debug( "[ContentDAOmanager] deleteAllDescriptions" );
+        }
+
+        waitAndLock();
+
+        EntityTransaction transac = em.getTransaction();
+        try
+        {
+            transac.begin();
+
+            Query qFP = em.createQuery( "from FilePath fp" );
+            List<FilePath> fps = qFP.getResultList();
+            for ( FilePath fp : fps )
+            {
+                em.remove( fp );
+            }
+
+            Query qDesc = em.createQuery( "from Description d" );
+            List<Description> ds = qDesc.getResultList();
+            for ( Description d : ds )
+            {
+                em.remove( d );
+            }
+
+            em.flush();
+
             transac.commit();
         }
         catch( RuntimeException ex )
@@ -469,10 +510,11 @@ public class ContentDAOmanager
     private final static Logger logger = LoggerFactory.getLogger( ContentDAOmanager.class );
     private EntityManagerFactory emf;
     private EntityManager em;
-    private final Reference<Boolean> lock = new Reference<Boolean>( Boolean.FALSE );
+    private boolean lock;
 
     private void init()
     {
+        this.lock = false;
     }
 
     private ContentDAOmanager()
@@ -485,33 +527,27 @@ public class ContentDAOmanager
         private static final ContentDAOmanager INSTANCE = new ContentDAOmanager();
     }
 
-    private void waitAndLock()
+    private synchronized void waitAndLock()
     {
-        synchronized( lock )
+        while ( lock )
         {
-            while ( lock.o )
+            try
             {
-                try
-                {
-                    lock.wait();
-                }
-                catch( InterruptedException ex )
-                {
-                    // Ignore
-                }
+                wait();
             }
-
-            lock.o = Boolean.TRUE;
+            catch( InterruptedException ex )
+            {
+                // Ignore
+            }
         }
+
+        lock = true;
     }
 
-    private void releaseLock()
+    private synchronized void releaseLock()
     {
-        synchronized( lock )
-        {
-            lock.o = Boolean.FALSE;
+        lock = false;
 
-            lock.notifyAll();
-        }
+        notify();
     }
 }

@@ -17,6 +17,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
+import javax.persistence.Transient;
 
 /**
  *
@@ -28,7 +29,8 @@ public class Description
         implements Serializable
 {
     // PUBLIC
-    public enum FilePathType {
+    public enum FilePathType
+    {
         PICTURE, VIDEO, OTHER
     }
 
@@ -51,7 +53,7 @@ public class Description
 
     @Column( name = "D_TYPE" )
     @Basic( optional = false )
-    @Enumerated(EnumType.STRING)
+    @Enumerated( EnumType.STRING )
     public FilePathType getType()
     {
         return type;
@@ -107,7 +109,7 @@ public class Description
     {
         this.person = person;
     }
-    
+
     @Column( name = "D_TITLE" , length = 1024 )
     public String getTitle()
     {
@@ -152,7 +154,7 @@ public class Description
     {
         this.place = place;
     }
-    
+
     @Column( name = "D_UPDATED" )
     @Basic( optional = false )
     public boolean isUpdated()
@@ -176,7 +178,7 @@ public class Description
     {
         this.ignoreSort = ignoreSort;
     }
-    
+
     @Column( name = "D_FILES_COUNT" )
     @Basic( optional = false )
     public int getFilesCount()
@@ -189,12 +191,23 @@ public class Description
         this.filesCount = filesCount;
     }
 
+    @Column( name = "D_WRITABLE" )
+    @Basic( optional = false )
+    public boolean isWritable()
+    {
+        return writable;
+    }
+
+    public void setWritable( boolean writable )
+    {
+        this.writable = writable;
+    }
+
     @Override
     public String toString()
     {
-        return "Description{" + "ID=" + ID + ", type=" + type + ", createdDate=" + createdDate + ", gpsLat=" + gpsLat + ", gpsLng=" + gpsLng + ", place=" + place + ", title=" + title + ", make=" + make + ", model=" + model + ", person=" + person + ", updated=" + updated + ", ignoreSort=" + ignoreSort + ", filesCount=" + filesCount + '}';
+        return "Description{" + "ID=" + ID + ", type=" + type + ", createdDate=" + createdDate + ", gpsLat=" + gpsLat + ", gpsLng=" + gpsLng + ", place=" + place + ", title=" + title + ", make=" + make + ", model=" + model + ", person=" + person + ", updated=" + updated + ", ignoreSort=" + ignoreSort + ", filesCount=" + filesCount + ", writable=" + writable + '}';
     }
-    
     // PROTECTED
     // PRIVATE
     private final static long serialVersionUID = 34592348345234L;
@@ -211,6 +224,7 @@ public class Description
     private boolean updated;
     private boolean ignoreSort;
     private int filesCount;
+    private boolean writable;
 
     private void init()
     {
@@ -219,13 +233,14 @@ public class Description
         this.createdDate = null;
         this.gpsLat = null;
         this.gpsLng = null;
-        this.place=null;
+        this.place = null;
         this.title = null;
         this.make = null;
         this.model = null;
-        this.person=null;
+        this.person = null;
         this.updated = false;
-        this.ignoreSort=false;
+        this.ignoreSort = false;
         this.filesCount = 0;
+        this.writable = false;
     }
 }

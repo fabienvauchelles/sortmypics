@@ -10,6 +10,7 @@ import com.vaushell.tools.images.ImageManager;
 import java.awt.Component;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
 import javax.swing.DefaultCellEditor;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.ImageIcon;
@@ -19,6 +20,7 @@ import javax.swing.SwingConstants;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableModel;
 import org.jdesktop.swingx.JXTable;
+import org.jdesktop.swingx.table.DatePickerCellEditor;
 
 /**
  *
@@ -38,7 +40,7 @@ public class FilePathTable
     public void reloadComboContent()
     {
         cmbModel.reload();
-        
+
         cmb.setModel( cmbModel );
     }
 
@@ -47,9 +49,29 @@ public class FilePathTable
     {
         super.setModel( dataModel );
 
-        if ( dataModel != null && getColumnCount() > 9 )
+        if ( dataModel != null && dataModel instanceof FilePathTableModel )
         {
-            getColumnModel().getColumn( 9 ).setCellEditor( new DefaultCellEditor( cmb ) );
+            FilePathTableModel model = (FilePathTableModel) dataModel;
+
+            // Combo
+            reloadComboContent();
+
+            // Cell editor
+            getColumnModel().getColumn( 8).setCellEditor( new DatePickerCellEditor() );
+            getColumnModel().getColumn( 11 ).setCellEditor( new DefaultCellEditor( cmb ) );
+
+            // Columns width
+            for ( int clView = 0 ; clView < getColumnCount() ; clView++ )
+            {
+                int clModel = convertColumnIndexToModel( clView );
+
+                Integer size = (Integer) model.getDescriptor()[ clModel][3];
+                if ( size != null )
+                {
+                    getColumn( clModel ).setPreferredWidth( size );
+                    getColumn( clModel ).setMaxWidth( size );
+                }
+            }
         }
     }
     // PROTECTED
@@ -62,7 +84,9 @@ public class FilePathTable
     {
         this.sf = new SimpleDateFormat( "dd/MM/yyyy HH:mm:ss" );
 
-        setDefaultRenderer( Calendar.class ,
+        setColumnControlVisible( true );
+
+        setDefaultRenderer( Date.class ,
                             new DefaultTableCellRenderer()
         {
             @Override
@@ -74,7 +98,7 @@ public class FilePathTable
                 }
                 else
                 {
-                    setText( sf.format( ( (Calendar) value ).getTime() ) );
+                    setText( sf.format( (Date) value ) );
                 }
             }
         } );
@@ -126,32 +150,30 @@ public class FilePathTable
         } );
 
         this.cmbModel = new ComboBoxPlacesModel();
-        this.cmb= new JComboBox( this.cmbModel );
+        this.cmb = new JComboBox( this.cmbModel );
         this.cmb.setRenderer( new DefaultListCellRenderer()
+        {
+            @Override
+            public Component getListCellRendererComponent( JList list ,
+                                                           Object value ,
+                                                           int index ,
+                                                           boolean isSelected ,
+                                                           boolean cellHasFocus )
             {
-                @Override
-                public Component getListCellRendererComponent( JList list ,
-                                                               Object value ,
-                                                               int index ,
-                                                               boolean isSelected ,
-                                                               boolean cellHasFocus )
+                Component c = super.getListCellRendererComponent( list ,
+                                                                  value ,
+                                                                  index ,
+                                                                  isSelected ,
+                                                                  cellHasFocus );
+
+                if ( value instanceof Place )
                 {
-                    Component c = super.getListCellRendererComponent( list ,
-                                                                      value ,
-                                                                      index ,
-                                                                      isSelected ,
-                                                                      cellHasFocus );
-
-                    if ( value instanceof Place )
-                    {
-                        Place p = (Place) value;
-                        setText( p.getName() );
-                    }
-
-                    return c;
+                    Place p = (Place) value;
+                    setText( p.getName() );
                 }
-            } );
 
-        reloadComboContent();
+                return c;
+            }
+        } );
     }
 }

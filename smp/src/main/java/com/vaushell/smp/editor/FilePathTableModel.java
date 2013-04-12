@@ -9,9 +9,13 @@ import com.vaushell.smp.model.Description;
 import com.vaushell.smp.model.FilePath;
 import com.vaushell.smp.model.Person;
 import com.vaushell.smp.model.Place;
+import com.vaushell.tools.SafeCompare;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
+import java.util.TreeSet;
 import java.util.Vector;
 import javax.swing.table.DefaultTableModel;
 
@@ -32,14 +36,38 @@ public class FilePathTableModel
 
     public void clear()
     {
-        fps.clear();
+        synchronized( fplsSorted )
+        {
+            fpls.clear();
+            fplsSorted.clear();
+        }
 
         fireTableDataChanged();
     }
 
-    public FilePath getAtRow( int row )
+    public FilePathLine getAtRow( int row )
     {
-        return fps.get( row );
+        return fpls.get( row );
+    }
+
+    public void setDescriptionCreatedDate( Calendar newCreatedDate ,
+                                           FilePathLine fpl )
+    {
+        fplsSorted.remove( fpl );
+        fpl.getFP().getDescription().setCreatedDate( newCreatedDate );
+        fplsSorted.add( fpl );
+
+        processColor();
+    }
+
+    public void setDescriptionTitle( String newTitle ,
+                                     FilePathLine fpl )
+    {
+        fplsSorted.remove( fpl );
+        fpl.getFP().getDescription().setTitle( newTitle );
+        fplsSorted.add( fpl );
+
+        processColor();
     }
 
     @Override
@@ -84,7 +112,13 @@ public class FilePathTableModel
 
     public void addFilePath( FilePath fp )
     {
-        fps.add( fp );
+        synchronized( fplsSorted )
+        {
+            FilePathLine fpl = new FilePathLine( fp );
+            fpls.add( fpl );
+            fplsSorted.add( fpl );
+            processColor();
+        }
 
         fireTableDataChanged();
     }
@@ -158,7 +192,7 @@ public class FilePathTableModel
     @Override
     public int getRowCount()
     {
-        return fps.size();
+        return fpls.size();
     }
 
     @Override
@@ -184,58 +218,76 @@ public class FilePathTableModel
     public Object getValueAt( int row ,
                               int column )
     {
-        FilePath fp = fps.get( row );
+        FilePathLine fpl = fpls.get( row );
 
         switch( column )
         {
             case 0:
             {
-                return fp.getDescription().getType();
+                return fpl.getFP().getDescription().getType();
             }
 
             case 1:
             {
-                return fp.getDescription().isUpdated();
+                return fpl.getFP().getDescription().isUpdated();
             }
 
             case 2:
             {
-                return fp.getDescription().isIgnoreSort();
+                return fpl.getFP().getDescription().isIgnoreSort();
             }
 
             case 3:
             {
-                return fp.getDescription().getFilesCount();
+                return fpl.getFP().getDescription().isWritable();
             }
 
             case 4:
             {
-                return fp.getPath();
+                return fpl.getFP().getDescription().getFilesCount();
             }
 
             case 5:
             {
-                return fp.getName();
+                return fpl.getFP().getSourcePath();
             }
 
             case 6:
             {
-                return fp.getDescription().getCreatedDate();
+                return fpl.getFP().getDestinationPath();
             }
 
             case 7:
             {
-                return fp.getDescription().getGPSlat();
+                return fpl.getFP().getName();
             }
 
             case 8:
             {
-                return fp.getDescription().getGPSlng();
+                Calendar c = fpl.getFP().getDescription().getCreatedDate();
+                if ( c == null )
+                {
+                    return null;
+                }
+                else
+                {
+                    return c.getTime();
+                }
             }
 
             case 9:
             {
-                Place pl = fp.getDescription().getPlace();
+                return fpl.getFP().getDescription().getGPSlat();
+            }
+
+            case 10:
+            {
+                return fpl.getFP().getDescription().getGPSlng();
+            }
+
+            case 11:
+            {
+                Place pl = fpl.getFP().getDescription().getPlace();
                 if ( pl == null )
                 {
                     return null;
@@ -246,24 +298,24 @@ public class FilePathTableModel
                 }
             }
 
-            case 10:
-            {
-                return fp.getDescription().getTitle();
-            }
-
-            case 11:
-            {
-                return fp.getDescription().getMake();
-            }
-
             case 12:
             {
-                return fp.getDescription().getModel();
+                return fpl.getFP().getDescription().getTitle();
             }
 
             case 13:
             {
-                Person pe = fp.getDescription().getPerson();
+                return fpl.getFP().getDescription().getMake();
+            }
+
+            case 14:
+            {
+                return fpl.getFP().getDescription().getModel();
+            }
+
+            case 15:
+            {
+                Person pe = fpl.getFP().getDescription().getPerson();
                 if ( pe == null )
                 {
                     return null;
@@ -286,7 +338,7 @@ public class FilePathTableModel
                             int row ,
                             int column )
     {
-        FilePath fp = fps.get( row );
+        FilePathLine fpl = fpls.get( row );
 
         boolean modified = false;
 
@@ -296,36 +348,10 @@ public class FilePathTableModel
             {
                 Boolean value = (Boolean) aValue;
 
-                if ( !value.equals( fp.getDescription().isIgnoreSort() ) )
+                if ( !value.equals( fpl.getFP().getDescription().isIgnoreSort() ) )
                 {
-                    fp.getDescription().setIgnoreSort( value );
+                    fpl.getFP().getDescription().setIgnoreSort( value );
                     modified = true;
-                }
-
-                break;
-            }
-
-            case 7:
-            {
-                Double value = (Double) aValue;
-
-                if ( fp.getDescription().getGPSlat() == null )
-                {
-                    if ( value != null )
-                    {
-                        fp.getDescription().setGPSlat( value );
-                        fp.getDescription().setUpdated( true );
-                        modified = true;
-                    }
-                }
-                else
-                {
-                    if ( !fp.getDescription().getGPSlat().equals( value ) )
-                    {
-                        fp.getDescription().setGPSlat( value );
-                        fp.getDescription().setUpdated( true );
-                        modified = true;
-                    }
                 }
 
                 break;
@@ -333,23 +359,31 @@ public class FilePathTableModel
 
             case 8:
             {
-                Double value = (Double) aValue;
+                Date value = (Date) aValue;
 
-                if ( fp.getDescription().getGPSlng() == null )
+                if ( fpl.getFP().getDescription().getCreatedDate() == null )
                 {
                     if ( value != null )
                     {
-                        fp.getDescription().setGPSlng( value );
-                        fp.getDescription().setUpdated( true );
+                        Calendar c = Calendar.getInstance();
+                        c.setTime( value );
+
+                        setDescriptionCreatedDate( c ,
+                                                   fpl );
+                        fpl.getFP().getDescription().setUpdated( true );
                         modified = true;
                     }
                 }
                 else
                 {
-                    if ( !fp.getDescription().getGPSlng().equals( value ) )
+                    Calendar c = Calendar.getInstance();
+                    c.setTime( value );
+
+                    if ( !fpl.getFP().getDescription().getCreatedDate().equals( c ) )
                     {
-                        fp.getDescription().setGPSlng( value );
-                        fp.getDescription().setUpdated( true );
+                        setDescriptionCreatedDate( c ,
+                                                   fpl );
+                        fpl.getFP().getDescription().setUpdated( true );
                         modified = true;
                     }
                 }
@@ -359,21 +393,23 @@ public class FilePathTableModel
 
             case 9:
             {
-                Place value = (Place) aValue;
+                Double value = (Double) aValue;
 
-                if ( fp.getDescription().getPlace() == null )
+                if ( fpl.getFP().getDescription().getGPSlat() == null )
                 {
                     if ( value != null )
                     {
-                        fp.getDescription().setPlace( value );
+                        fpl.getFP().getDescription().setGPSlat( value );
+                        fpl.getFP().getDescription().setUpdated( true );
                         modified = true;
                     }
                 }
                 else
                 {
-                    if ( !fp.getDescription().getPlace().equals( value ) )
+                    if ( !fpl.getFP().getDescription().getGPSlat().equals( value ) )
                     {
-                        fp.getDescription().setPlace( value );
+                        fpl.getFP().getDescription().setGPSlat( value );
+                        fpl.getFP().getDescription().setUpdated( true );
                         modified = true;
                     }
                 }
@@ -383,23 +419,23 @@ public class FilePathTableModel
 
             case 10:
             {
-                String value = (String) aValue;
+                Double value = (Double) aValue;
 
-                if ( fp.getDescription().getTitle() == null )
+                if ( fpl.getFP().getDescription().getGPSlng() == null )
                 {
                     if ( value != null )
                     {
-                        fp.getDescription().setTitle( value );
-                        fp.getDescription().setUpdated( true );
+                        fpl.getFP().getDescription().setGPSlng( value );
+                        fpl.getFP().getDescription().setUpdated( true );
                         modified = true;
                     }
                 }
                 else
                 {
-                    if ( !fp.getDescription().getTitle().equals( value ) )
+                    if ( !fpl.getFP().getDescription().getGPSlng().equals( value ) )
                     {
-                        fp.getDescription().setTitle( value );
-                        fp.getDescription().setUpdated( true );
+                        fpl.getFP().getDescription().setGPSlng( value );
+                        fpl.getFP().getDescription().setUpdated( true );
                         modified = true;
                     }
                 }
@@ -409,23 +445,21 @@ public class FilePathTableModel
 
             case 11:
             {
-                String value = (String) aValue;
+                Place value = (Place) aValue;
 
-                if ( fp.getDescription().getMake() == null )
+                if ( fpl.getFP().getDescription().getPlace() == null )
                 {
                     if ( value != null )
                     {
-                        fp.getDescription().setMake( value );
-                        fp.getDescription().setUpdated( true );
+                        fpl.getFP().getDescription().setPlace( value );
                         modified = true;
                     }
                 }
                 else
                 {
-                    if ( !fp.getDescription().getMake().equals( value ) )
+                    if ( !fpl.getFP().getDescription().getPlace().equals( value ) )
                     {
-                        fp.getDescription().setMake( value );
-                        fp.getDescription().setUpdated( true );
+                        fpl.getFP().getDescription().setPlace( value );
                         modified = true;
                     }
                 }
@@ -437,21 +471,77 @@ public class FilePathTableModel
             {
                 String value = (String) aValue;
 
-                if ( fp.getDescription().getModel() == null )
+                if ( fpl.getFP().getDescription().getTitle() == null )
                 {
                     if ( value != null )
                     {
-                        fp.getDescription().setModel( value );
-                        fp.getDescription().setUpdated( true );
+                        setDescriptionTitle( value ,
+                                             fpl );
+                        fpl.getFP().getDescription().setUpdated( true );
+
                         modified = true;
                     }
                 }
                 else
                 {
-                    if ( !fp.getDescription().getModel().equals( value ) )
+                    if ( !fpl.getFP().getDescription().getTitle().equals( value ) )
                     {
-                        fp.getDescription().setModel( value );
-                        fp.getDescription().setUpdated( true );
+                        setDescriptionTitle( value ,
+                                             fpl );
+                        fpl.getFP().getDescription().setUpdated( true );
+
+                        modified = true;
+                    }
+                }
+
+                break;
+            }
+
+            case 13:
+            {
+                String value = (String) aValue;
+
+                if ( fpl.getFP().getDescription().getMake() == null )
+                {
+                    if ( value != null )
+                    {
+                        fpl.getFP().getDescription().setMake( value );
+                        fpl.getFP().getDescription().setUpdated( true );
+                        modified = true;
+                    }
+                }
+                else
+                {
+                    if ( !fpl.getFP().getDescription().getMake().equals( value ) )
+                    {
+                        fpl.getFP().getDescription().setMake( value );
+                        fpl.getFP().getDescription().setUpdated( true );
+                        modified = true;
+                    }
+                }
+
+                break;
+            }
+
+            case 14:
+            {
+                String value = (String) aValue;
+
+                if ( fpl.getFP().getDescription().getModel() == null )
+                {
+                    if ( value != null )
+                    {
+                        fpl.getFP().getDescription().setModel( value );
+                        fpl.getFP().getDescription().setUpdated( true );
+                        modified = true;
+                    }
+                }
+                else
+                {
+                    if ( !fpl.getFP().getDescription().getModel().equals( value ) )
+                    {
+                        fpl.getFP().getDescription().setModel( value );
+                        fpl.getFP().getDescription().setUpdated( true );
                         modified = true;
                     }
                 }
@@ -462,7 +552,7 @@ public class FilePathTableModel
 
         if ( modified )
         {
-            ContentDAOmanager.getInstance().updateDescription( fp.getDescription() );
+            ContentDAOmanager.getInstance().updateDescription( fpl.getFP().getDescription() );
 
             fireTableDataChanged();
         }
@@ -479,57 +569,209 @@ public class FilePathTableModel
     {
         return (Class<?>) descriptor[ columnIndex][ 1];
     }
+
+    public class FilePathLine
+    {
+        // PUBLIC
+        public FilePathLine( FilePath fp )
+        {
+            this.fp = fp;
+            this.num = Integer.MIN_VALUE;
+        }
+
+        public boolean sameGroup( FilePathLine o )
+        {
+            if ( !isNear( getFP().getDescription().getCreatedDate() ,
+                          o.getFP().getDescription().getCreatedDate() ) )
+            {
+                return false;
+            }
+
+            if ( SafeCompare.compareTo( getFP().getDescription().getTitle() ,
+                                        o.getFP().getDescription().getTitle() ) != 0 )
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        public FilePath getFP()
+        {
+            return fp;
+        }
+
+        public void setFP( FilePath fp )
+        {
+            this.fp = fp;
+        }
+
+        public int getNum()
+        {
+            return num;
+        }
+
+        public void setNum( int num )
+        {
+            this.num = num;
+        }
+        // PRIVATE
+        private FilePath fp;
+        private int num;
+    }
+
+    public Object[][] getDescriptor()
+    {
+        return descriptor;
+    }
     // PROTECTED
     // PRIVATE
     private final static Object[][] descriptor = new Object[][]
     {
         {
-            "Type" , Description.FilePathType.class , false,
+            "T" , Description.FilePathType.class , false , 30
         } ,
         {
-            "Updated" , Boolean.class , false,
+            "M" , Boolean.class , false , 30
         } ,
         {
-            "Ignore sort" , Boolean.class , true,
+            "S" , Boolean.class , true , 30
         } ,
         {
-            "Duplicate" , Integer.class , true,
+            "W" , Boolean.class , true , 30
         } ,
         {
-            "Path" , String.class , false
+            "Clone" , Integer.class , true , 40
         } ,
         {
-            "Name" , String.class , false
+            "SRC path" , String.class , false , null
         } ,
         {
-            "Date" , Calendar.class , false,
+            "DST path" , String.class , false , null
         } ,
         {
-            "Latitude" , Double.class , true,
+            "Name" , String.class , false , null
         } ,
         {
-            "Longitude" , Double.class , true,
+            "Date" , Date.class , true , 120
         } ,
         {
-            "Place" , String.class , true,
+            "Latitude" , Double.class , true , 100
         } ,
         {
-            "Title" , String.class , true,
+            "Longitude" , Double.class , true , 100
         } ,
         {
-            "Make" , String.class , true,
+            "Place" , String.class , true , null
         } ,
         {
-            "Model" , String.class , true,
+            "Title" , String.class , true , null
         } ,
         {
-            "Person" , String.class , false,
+            "Make" , String.class , true , null
+        } ,
+        {
+            "Model" , String.class , true , null
+        } ,
+        {
+            "Person" , String.class , false , null
         }
     };
-    private List<FilePath> fps;
+    private List<FilePathLine> fpls;
+    private final TreeSet<FilePathLine> fplsSorted = new TreeSet<FilePathLine>( new Comparator<FilePathLine>()
+    {
+        public int compare( FilePathLine o1 ,
+                            FilePathLine o2 )
+        {
+            if ( isNear( o1.getFP().getDescription().getCreatedDate() ,
+                         o2.getFP().getDescription().getCreatedDate() ) )
+            {
+                int cmp = SafeCompare.compareTo( o1.getFP().getDescription().getTitle() ,
+                                                 o2.getFP().getDescription().getTitle() );
+                if ( cmp != 0 )
+                {
+                    return cmp;
+                }
+
+                cmp = SafeCompare.compareTo( o1.getFP().getDescription().getID() ,
+                                             o2.getFP().getDescription().getID() );
+                if ( cmp != 0 )
+                {
+                    return cmp;
+                }
+
+                return SafeCompare.compareTo( o1.getFP().getID() ,
+                                              o2.getFP().getID() );
+            }
+            else
+            {
+                return SafeCompare.compareTo( o1.getFP().getDescription().getCreatedDate() ,
+                                              o2.getFP().getDescription().getCreatedDate() );
+            }
+        }
+    } );
 
     private void init()
     {
-        this.fps = new ArrayList<FilePath>();
+        this.fpls = new ArrayList<FilePathLine>();
+
+
+    }
+
+    private void processColor()
+    {
+        synchronized( fplsSorted )
+        {
+            int num = 0;
+            FilePathLine previous = null;
+            for ( FilePathLine fpl : fplsSorted )
+            {
+                if ( previous != null && !previous.sameGroup( fpl ) )
+                {
+                    ++num;
+                }
+
+                fpl.num = num;
+                previous = fpl;
+            }
+        }
+    }
+
+    private static boolean isNear( Calendar c1 ,
+                                   Calendar c2 )
+    {
+        if ( c1 == null )
+        {
+            if ( c2 == null )
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+        else
+        {
+            if ( c2 == null )
+            {
+                return false;
+            }
+            else
+            {
+                if ( c1.get( Calendar.YEAR ) == c2.get( Calendar.YEAR )
+                     && c1.get( Calendar.DAY_OF_YEAR ) == c2.get( Calendar.DAY_OF_YEAR ) )
+                {
+                    return true;
+                }
+
+                if ( Math.abs( c1.getTimeInMillis() - c2.getTimeInMillis() ) <= 2 * 60 * 60 * 1000 )
+                {
+                    return true;
+                }
+
+                return false;
+            }
+        }
     }
 }

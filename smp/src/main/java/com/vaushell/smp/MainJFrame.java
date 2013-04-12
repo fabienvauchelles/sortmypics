@@ -11,6 +11,7 @@ import com.vaushell.rc.popup.PopupFrame;
 import com.vaushell.rc.thread.ModalTaskPopup;
 import com.vaushell.smp.editor.FilePathTableModel;
 import com.vaushell.smp.imp.ImportPanel;
+import com.vaushell.smp.info.InfoPanel;
 import com.vaushell.smp.model.ContentDAOmanager;
 import com.vaushell.smp.model.Description;
 import com.vaushell.smp.model.FilePath;
@@ -18,19 +19,36 @@ import com.vaushell.smp.model.Place;
 import com.vaushell.smp.places.PlaceViewerPanel;
 import com.vaushell.smp.places.PlacesEditorPanel;
 import com.vaushell.smp.viewer.PictureViewerPanel;
+import com.vaushell.tools.ColorMaker;
+import com.vaushell.tools.exiftool.ExifTool;
 import com.vaushell.tools.exiftool.ExifToolManager;
 import com.vaushell.tools.images.ImageManager;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Event;
 import java.awt.Image;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import javax.imageio.ImageIO;
+import javax.swing.AbstractAction;
+import javax.swing.JMenuItem;
+import javax.swing.JPopupMenu;
+import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
+import javax.swing.event.ChangeListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import org.apache.commons.configuration.AbstractConfiguration;
 import org.apache.commons.configuration.XMLConfiguration;
+import org.jdesktop.swingx.decorator.ComponentAdapter;
+import org.jdesktop.swingx.decorator.Highlighter;
 import org.jdesktop.swingx.mapviewer.GeoPosition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -148,16 +166,23 @@ public class MainJFrame
         jTLBmain = new javax.swing.JToolBar();
         jBTshowPictureViewer = new javax.swing.JToggleButton();
         jBTshowPlaceViewer = new javax.swing.JToggleButton();
-        jBTsyncGPSplaces = new javax.swing.JButton();
-        jBTsyncPlacesGPS = new javax.swing.JButton();
+        jSeparator3 = new javax.swing.JToolBar.Separator();
+        jBTshowEmpty = new javax.swing.JToggleButton();
+        jBTshowGroup = new javax.swing.JToggleButton();
         jPNLtbEmpty = new javax.swing.JPanel();
         jSPfilePaths = new javax.swing.JScrollPane();
         jTBfilePaths = new com.vaushell.smp.editor.FilePathTable();
         jPNLfooter = new javax.swing.JPanel();
+        jLBLreference = new javax.swing.JLabel();
         jLBLfilePathsCount = new javax.swing.JLabel();
         jMB = new javax.swing.JMenuBar();
         jMNfile = new javax.swing.JMenu();
         jMIimport = new javax.swing.JMenuItem();
+        jMIsave = new javax.swing.JMenuItem();
+        jSeparator1 = new javax.swing.JPopupMenu.Separator();
+        jMIreset = new javax.swing.JMenuItem();
+        jSeparator2 = new javax.swing.JPopupMenu.Separator();
+        jMIclose = new javax.swing.JMenuItem();
         jMNwindow = new javax.swing.JMenu();
         jMIeditPlaces = new javax.swing.JMenuItem();
 
@@ -190,30 +215,31 @@ public class MainJFrame
             }
         });
         jTLBmain.add(jBTshowPlaceViewer);
+        jTLBmain.add(jSeparator3);
 
-        jBTsyncGPSplaces.setIcon(new javax.swing.ImageIcon(getClass().getResource("/com/vaushell/smp/icons/btSync.png"))); // NOI18N
-        jBTsyncGPSplaces.setText("GPS > Places");
-        jBTsyncGPSplaces.setToolTipText("Find places within GPS coordinate");
-        jBTsyncGPSplaces.addActionListener(new java.awt.event.ActionListener()
+        jBTshowEmpty.setIcon(new javax.swing.ImageIcon(getClass().getResource("/com/vaushell/smp/icons/btViewEmpty.png"))); // NOI18N
+        jBTshowEmpty.setText("View empty");
+        jBTshowEmpty.setToolTipText("View empty");
+        jBTshowEmpty.addActionListener(new java.awt.event.ActionListener()
         {
             public void actionPerformed(java.awt.event.ActionEvent evt)
             {
-                jBTsyncGPSplacesActionPerformed(evt);
+                jBTshowEmptyActionPerformed(evt);
             }
         });
-        jTLBmain.add(jBTsyncGPSplaces);
+        jTLBmain.add(jBTshowEmpty);
 
-        jBTsyncPlacesGPS.setIcon(new javax.swing.ImageIcon(getClass().getResource("/com/vaushell/smp/icons/btSync.png"))); // NOI18N
-        jBTsyncPlacesGPS.setText("GPS > Places");
-        jBTsyncPlacesGPS.setToolTipText("Copy places to wrong GPS coordinate");
-        jBTsyncPlacesGPS.addActionListener(new java.awt.event.ActionListener()
+        jBTshowGroup.setIcon(new javax.swing.ImageIcon(getClass().getResource("/com/vaushell/smp/icons/btViewGroup.png"))); // NOI18N
+        jBTshowGroup.setText("View group");
+        jBTshowGroup.setToolTipText("View group");
+        jBTshowGroup.addActionListener(new java.awt.event.ActionListener()
         {
             public void actionPerformed(java.awt.event.ActionEvent evt)
             {
-                jBTsyncPlacesGPSActionPerformed(evt);
+                jBTshowGroupActionPerformed(evt);
             }
         });
-        jTLBmain.add(jBTsyncPlacesGPS);
+        jTLBmain.add(jBTshowGroup);
 
         jPNLtbEmpty.setLayout(new java.awt.GridBagLayout());
         jTLBmain.add(jPNLtbEmpty);
@@ -226,8 +252,6 @@ public class MainJFrame
         getContentPane().add(jTLBmain, gridBagConstraints);
 
         jTBfilePaths.setModel(tmFilePaths);
-        jTBfilePaths.setAutoResizeMode(javax.swing.JTable.AUTO_RESIZE_ALL_COLUMNS);
-        jTBfilePaths.setColumnControlVisible(true);
         jSPfilePaths.setViewportView(jTBfilePaths);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
@@ -240,11 +264,17 @@ public class MainJFrame
 
         jPNLfooter.setLayout(new java.awt.GridBagLayout());
 
-        jLBLfilePathsCount.setText("no record found");
+        jLBLreference.setText("no copy reference");
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.anchor = java.awt.GridBagConstraints.EAST;
         gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(0, 0, 0, 10);
+        gridBagConstraints.insets = new java.awt.Insets(0, 10, 0, 10);
+        jPNLfooter.add(jLBLreference, gridBagConstraints);
+
+        jLBLfilePathsCount.setText("no record found");
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.EAST;
+        gridBagConstraints.insets = new java.awt.Insets(0, 10, 0, 10);
         jPNLfooter.add(jLBLfilePathsCount, gridBagConstraints);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
@@ -265,6 +295,38 @@ public class MainJFrame
             }
         });
         jMNfile.add(jMIimport);
+
+        jMIsave.setText("Apply changes");
+        jMIsave.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
+                jMIsaveActionPerformed(evt);
+            }
+        });
+        jMNfile.add(jMIsave);
+        jMNfile.add(jSeparator1);
+
+        jMIreset.setText("Reset files");
+        jMIreset.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
+                jMIresetActionPerformed(evt);
+            }
+        });
+        jMNfile.add(jMIreset);
+        jMNfile.add(jSeparator2);
+
+        jMIclose.setText("Close");
+        jMIclose.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
+                jMIcloseActionPerformed(evt);
+            }
+        });
+        jMNfile.add(jMIclose);
 
         jMB.add(jMNfile);
 
@@ -316,33 +378,62 @@ public class MainJFrame
 
     }//GEN-LAST:event_jMIeditPlacesActionPerformed
 
-    private void jBTsyncGPSplacesActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jBTsyncGPSplacesActionPerformed
-    {//GEN-HEADEREND:event_jBTsyncGPSplacesActionPerformed
+    private void jMIcloseActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jMIcloseActionPerformed
+    {//GEN-HEADEREND:event_jMIcloseActionPerformed
 
-        syncGPSplaces();
+        close();
 
-    }//GEN-LAST:event_jBTsyncGPSplacesActionPerformed
+    }//GEN-LAST:event_jMIcloseActionPerformed
 
-    private void jBTsyncPlacesGPSActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jBTsyncPlacesGPSActionPerformed
-    {//GEN-HEADEREND:event_jBTsyncPlacesGPSActionPerformed
+    private void jMIresetActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jMIresetActionPerformed
+    {//GEN-HEADEREND:event_jMIresetActionPerformed
 
-        syncPlacesGPS();
+        deleteAllDescriptions();
 
-    }//GEN-LAST:event_jBTsyncPlacesGPSActionPerformed
+    }//GEN-LAST:event_jMIresetActionPerformed
+
+    private void jBTshowGroupActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jBTshowGroupActionPerformed
+    {//GEN-HEADEREND:event_jBTshowGroupActionPerformed
+
+        jTBfilePaths.repaint();
+
+    }//GEN-LAST:event_jBTshowGroupActionPerformed
+
+    private void jBTshowEmptyActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jBTshowEmptyActionPerformed
+    {//GEN-HEADEREND:event_jBTshowEmptyActionPerformed
+
+        jTBfilePaths.repaint();
+
+    }//GEN-LAST:event_jBTshowEmptyActionPerformed
+
+    private void jMIsaveActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jMIsaveActionPerformed
+    {//GEN-HEADEREND:event_jMIsaveActionPerformed
+        
+        save();
+        
+    }//GEN-LAST:event_jMIsaveActionPerformed
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JToggleButton jBTshowEmpty;
+    private javax.swing.JToggleButton jBTshowGroup;
     private javax.swing.JToggleButton jBTshowPictureViewer;
     private javax.swing.JToggleButton jBTshowPlaceViewer;
-    private javax.swing.JButton jBTsyncGPSplaces;
-    private javax.swing.JButton jBTsyncPlacesGPS;
     private javax.swing.JLabel jLBLfilePathsCount;
+    private javax.swing.JLabel jLBLreference;
     private javax.swing.JMenuBar jMB;
+    private javax.swing.JMenuItem jMIclose;
     private javax.swing.JMenuItem jMIeditPlaces;
     private javax.swing.JMenuItem jMIimport;
+    private javax.swing.JMenuItem jMIreset;
+    private javax.swing.JMenuItem jMIsave;
     private javax.swing.JMenu jMNfile;
     private javax.swing.JMenu jMNwindow;
     private javax.swing.JPanel jPNLfooter;
     private javax.swing.JPanel jPNLtbEmpty;
     private javax.swing.JScrollPane jSPfilePaths;
+    private javax.swing.JPopupMenu.Separator jSeparator1;
+    private javax.swing.JPopupMenu.Separator jSeparator2;
+    private javax.swing.JToolBar.Separator jSeparator3;
     private com.vaushell.smp.editor.FilePathTable jTBfilePaths;
     private javax.swing.JToolBar jTLBmain;
     // End of variables declaration//GEN-END:variables
@@ -354,14 +445,16 @@ public class MainJFrame
     private PictureViewerPanel pictureViewerPanel;
     private PopupFrame pictureViewerFrame;
     private PlacesEditorPanel placesEditorPanel;
-    private PopupFrame placesEditorFrame;
+    private PopupDialog placesEditorDialog;
     private PlaceViewerPanel placeViewerPanel;
     private PopupFrame placeViewerFrame;
+    private FilePathTableModel.FilePathLine reference;
 
     private void init()
     {
         try
         {
+            this.reference = null;
             this.tmFilePaths = new FilePathTableModel();
 
             ContentDAOmanager.getInstance().start();
@@ -414,9 +507,9 @@ public class MainJFrame
         // Edit places
         this.placesEditorPanel = new PlacesEditorPanel( this );
 
-        this.placesEditorFrame = new PopupFrame( this ,
-                                                 this.placesEditorPanel ,
-                                                 true );
+        this.placesEditorDialog = new PopupDialog( this ,
+                                                   this.placesEditorPanel ,
+                                                   true );
 
         // Filepath
         jTBfilePaths.getSelectionModel().addListSelectionListener( new ListSelectionListener()
@@ -460,6 +553,108 @@ public class MainJFrame
                         }
                     } );
                 }
+            }
+        } );
+
+        jTBfilePaths.addMouseListener( new MouseAdapter()
+        {
+            @Override
+            public void mouseClicked( MouseEvent e )
+            {
+                if ( e.getButton() == MouseEvent.BUTTON3 )
+                {
+                    JPopupMenu menu = buildPPmenu();
+                    if ( menu != null )
+                    {
+                        menu.show( jTBfilePaths ,
+                                   e.getX() ,
+                                   e.getY() );
+                    }
+                }
+            }
+        } );
+
+        jTBfilePaths.getActionMap().put( "copy" ,
+                                         new AbstractAction()
+        {
+            public void actionPerformed( ActionEvent e )
+            {
+                int[] rowsView = jTBfilePaths.getSelectedRows();
+                if ( rowsView.length > 0 )
+                {
+                    copy( rowsView );
+                }
+            }
+        } );
+        jTBfilePaths.getInputMap().put( KeyStroke.getKeyStroke( KeyEvent.VK_C ,
+                                                                Event.CTRL_MASK ) ,
+                                        "copy" );
+
+        jTBfilePaths.getActionMap().put( "paste" ,
+                                         new AbstractAction()
+        {
+            public void actionPerformed( ActionEvent e )
+            {
+                int[] rowsView = jTBfilePaths.getSelectedRows();
+                if ( rowsView.length > 0 && reference != null )
+                {
+                    pasteFilled( rowsView );
+                }
+            }
+        } );
+        jTBfilePaths.getInputMap().put( KeyStroke.getKeyStroke( KeyEvent.VK_P ,
+                                                                Event.CTRL_MASK ) ,
+                                        "paste" );
+
+        // Highlights
+        jTBfilePaths.setHighlighters( new Highlighter()
+        {
+            public Component highlight( Component cmpnt ,
+                                        ComponentAdapter ca )
+            {
+                if ( ca.isSelected() )
+                {
+                    return cmpnt;
+                }
+
+                if ( jBTshowEmpty.isSelected()
+                     && ( ca.getValue() == null
+                          || ( ca.getValue() instanceof String && ( (String) ca.getValue() ).length() <= 0 ) ) )
+                {
+
+                    cmpnt.setBackground( Color.ORANGE );
+
+                    return cmpnt;
+                }
+
+                if ( jBTshowGroup.isSelected() )
+                {
+                    int rowModel = jTBfilePaths.convertRowIndexToModel( ca.row );
+
+                    FilePathTableModel.FilePathLine fpl = tmFilePaths.getAtRow( rowModel );
+
+                    Color color = ColorMaker.getBrightColor( fpl.getNum() ,
+                                                             400 );
+
+                    cmpnt.setBackground( color );
+
+                    return cmpnt;
+                }
+
+                return cmpnt;
+            }
+
+            public void addChangeListener( ChangeListener cl )
+            {
+            }
+
+            public void removeChangeListener( ChangeListener cl )
+            {
+            }
+
+            public ChangeListener[] getChangeListeners()
+            {
+                return new ChangeListener[ 0 ];
             }
         } );
     }
@@ -523,7 +718,7 @@ public class MainJFrame
     {
         placesEditorPanel.cachePicturesPositions();
 
-        placesEditorFrame.setVisible( true );
+        placesEditorDialog.setVisible( true );
     }
 
     private void updatePictureInViewer()
@@ -534,9 +729,9 @@ public class MainJFrame
         {
             int rowModel = jTBfilePaths.convertRowIndexToModel( rowView );
 
-            FilePath fp = tmFilePaths.getAtRow( rowModel );
+            FilePathTableModel.FilePathLine fpl = tmFilePaths.getAtRow( rowModel );
 
-            File file = fp.getFile();
+            File file = fpl.getFP().getFile();
 
             if ( file.exists() )
             {
@@ -560,10 +755,10 @@ public class MainJFrame
         {
             int rowModel = jTBfilePaths.convertRowIndexToModel( rowView );
 
-            FilePath fp = tmFilePaths.getAtRow( rowModel );
+            FilePathTableModel.FilePathLine fpl = tmFilePaths.getAtRow( rowModel );
 
-            Double gpsLat = fp.getDescription().getGPSlat();
-            Double gpsLng = fp.getDescription().getGPSlng();
+            Double gpsLat = fpl.getFP().getDescription().getGPSlat();
+            Double gpsLng = fpl.getFP().getDescription().getGPSlng();
 
             if ( gpsLat != null && gpsLng != null )
             {
@@ -581,11 +776,11 @@ public class MainJFrame
         }
     }
 
-    private void syncGPSplaces()
+    private void syncGPSplaces( final int[] rowsView )
     {
         new PopupDialog( this ,
                          new ModalTaskPopup( this ,
-                                             "Find" ,
+                                             "Find place for coordinate" ,
                                              null )
         {
             @Override
@@ -594,24 +789,26 @@ public class MainJFrame
                 try
                 {
                     List<Place> places = ContentDAOmanager.getInstance().getAllPlaces();
-                    List<Description> descriptions = ContentDAOmanager.getInstance().getAllDescriptionsWithGPS();
 
-                    setMax( descriptions.size() );
+                    setMax( rowsView.length );
 
                     int num = 0;
-                    for ( Description d : descriptions )
+                    for ( int rowView : rowsView )
                     {
-                        setLabel( "Process " + num + "/" + descriptions.size() );
+                        setLabel( "Process " + num + "/" + rowsView.length );
+
+                        int rowModel = jTBfilePaths.convertRowIndexToModel( rowView );
+                        FilePathTableModel.FilePathLine fpl = tmFilePaths.getAtRow( rowModel );
 
                         for ( Place place : places )
                         {
                             double R = 6371.0;
 
-                            double dLat = Math.toRadians( place.getGPSlat() - d.getGPSlat() );
-                            double dLng = Math.toRadians( place.getGPSlng() - d.getGPSlng() );
+                            double dLat = Math.toRadians( place.getGPSlat() - fpl.getFP().getDescription().getGPSlat() );
+                            double dLng = Math.toRadians( place.getGPSlng() - fpl.getFP().getDescription().getGPSlng() );
 
                             double lat1 = Math.toRadians( place.getGPSlat() );
-                            double lat2 = Math.toRadians( d.getGPSlat() );
+                            double lat2 = Math.toRadians( fpl.getFP().getDescription().getGPSlat() );
 
                             double a = Math.sin( dLat / 2.0 ) * Math.sin( dLat / 2 )
                                        + Math.sin( dLng / 2 ) * Math.sin( dLng / 2 ) * Math.cos( lat1 ) * Math.cos( lat2 );
@@ -621,9 +818,9 @@ public class MainJFrame
 
                             if ( e <= place.getRadius() )
                             {
-                                d.setPlace( place );
+                                fpl.getFP().getDescription().setPlace( place );
 
-                                ContentDAOmanager.getInstance().updateDescription( d );
+                                ContentDAOmanager.getInstance().updateDescription( fpl.getFP().getDescription() );
                                 break;
                             }
                         }
@@ -642,11 +839,11 @@ public class MainJFrame
         } ).setVisible( true );
     }
 
-    private void syncPlacesGPS()
+    private void syncPlacesGPS( final int[] rowsView )
     {
         new PopupDialog( this ,
                          new ModalTaskPopup( this ,
-                                             "Copy" ,
+                                             "Update coordinate with place" ,
                                              null )
         {
             @Override
@@ -654,24 +851,29 @@ public class MainJFrame
             {
                 try
                 {
-                    List<Description> descriptions = ContentDAOmanager.getInstance().getAllDescriptionsWithGPS();
-
-                    setMax( descriptions.size() );
+                    setMax( rowsView.length );
 
                     int num = 0;
-                    for ( Description d : descriptions )
+                    for ( int rowView : rowsView )
                     {
-                        setLabel( "Process " + num + "/" + descriptions.size() );
+                        setLabel( "Process " + num + "/" + rowsView.length );
 
-                        if ( d.getPlace() != null )
+                        int rowModel = jTBfilePaths.convertRowIndexToModel( rowView );
+                        FilePathTableModel.FilePathLine fpl = tmFilePaths.getAtRow( rowModel );
+
+                        if ( fpl.getFP().getDescription().getPlace() != null )
                         {
                             double R = 6371.0;
 
-                            double dLat = Math.toRadians( d.getPlace().getGPSlat() - d.getGPSlat() );
-                            double dLng = Math.toRadians( d.getPlace().getGPSlng() - d.getGPSlng() );
+                            double dLat = Math.toRadians( fpl.getFP().getDescription().getPlace().getGPSlat() - fpl.getFP().
+                                    getDescription().
+                                    getGPSlat() );
+                            double dLng = Math.toRadians( fpl.getFP().getDescription().getPlace().getGPSlng() - fpl.getFP().
+                                    getDescription().
+                                    getGPSlng() );
 
-                            double lat1 = Math.toRadians( d.getPlace().getGPSlat() );
-                            double lat2 = Math.toRadians( d.getGPSlat() );
+                            double lat1 = Math.toRadians( fpl.getFP().getDescription().getPlace().getGPSlat() );
+                            double lat2 = Math.toRadians( fpl.getFP().getDescription().getGPSlat() );
 
                             double a = Math.sin( dLat / 2.0 ) * Math.sin( dLat / 2 )
                                        + Math.sin( dLng / 2 ) * Math.sin( dLng / 2 ) * Math.cos( lat1 ) * Math.cos( lat2 );
@@ -679,13 +881,13 @@ public class MainJFrame
                                                        Math.sqrt( 1 - a ) );
                             double e = R * c;
 
-                            if ( e > d.getPlace().getRadius() )
+                            if ( e > fpl.getFP().getDescription().getPlace().getRadius() )
                             {
-                                d.setGPSlat( d.getPlace().getGPSlat() );
-                                d.setGPSlng( d.getPlace().getGPSlng() );
-                                d.setUpdated( true );
+                                fpl.getFP().getDescription().setGPSlat( fpl.getFP().getDescription().getPlace().getGPSlat() );
+                                fpl.getFP().getDescription().setGPSlng( fpl.getFP().getDescription().getPlace().getGPSlng() );
+                                fpl.getFP().getDescription().setUpdated( true );
 
-                                ContentDAOmanager.getInstance().updateDescription( d );
+                                ContentDAOmanager.getInstance().updateDescription( fpl.getFP().getDescription() );
                                 break;
                             }
                         }
@@ -702,5 +904,266 @@ public class MainJFrame
                 }
             }
         } ).setVisible( true );
+    }
+
+    private JPopupMenu buildPPmenu()
+    {
+        final int[] rowsView = jTBfilePaths.getSelectedRows();
+        if ( rowsView.length <= 0 )
+        {
+            return null;
+        }
+
+        JPopupMenu menu = new JPopupMenu();
+        menu.add( new JMenuItem( new AbstractAction( "Copy" )
+        {
+            public void actionPerformed( ActionEvent e )
+            {
+                copy( rowsView );
+            }
+        } ) );
+
+
+        if ( reference != null )
+        {
+            menu.add( new JMenuItem( new AbstractAction( "Filled paste" )
+            {
+                public void actionPerformed( ActionEvent e )
+                {
+                    pasteFilled( rowsView );
+                }
+            } ) );
+
+            menu.add( new JMenuItem( new AbstractAction( "Forced paste" )
+            {
+                public void actionPerformed( ActionEvent e )
+                {
+                    pasteForced( rowsView );
+                }
+            } ) );
+        }
+
+        menu.addSeparator();
+
+        menu.add( new JMenuItem( new AbstractAction( "Find place for coordinate" )
+        {
+            public void actionPerformed( ActionEvent e )
+            {
+                syncGPSplaces( rowsView );
+            }
+        } ) );
+
+        menu.add( new JMenuItem( new AbstractAction( "Update coordinate with place" )
+        {
+            public void actionPerformed( ActionEvent e )
+            {
+                syncPlacesGPS( rowsView );
+            }
+        } ) );
+
+        menu.addSeparator();
+
+        menu.add( new JMenuItem( new AbstractAction( "Get full info" )
+        {
+            public void actionPerformed( ActionEvent e )
+            {
+                SwingUtilities.invokeLater( new Runnable()
+                {
+                    public void run()
+                    {
+                        try
+                        {
+                            int rowModel = jTBfilePaths.convertRowIndexToModel( rowsView[ 0] );
+                            FilePathTableModel.FilePathLine fpl = tmFilePaths.getAtRow( rowModel );
+
+                            ExifTool tool = ExifToolManager.getInstance().borrowTool();
+                            Map<String , String> tags = tool.getAllMetas( fpl.getFP().getFile() );
+                            ExifToolManager.getInstance().returnTool( tool );
+
+                            new PopupFrame( MainJFrame.this ,
+                                            new InfoPanel( MainJFrame.this ,
+                                                           fpl.getFP().getName() ,
+                                                           tags ) ).setVisible( true );
+                        }
+                        catch( Throwable th )
+                        {
+                            logger.error( th.getMessage() ,
+                                          th );
+                        }
+                    }
+                } );
+            }
+        } ) );
+
+
+        return menu;
+    }
+
+    private void copy( final int[] rowsView )
+    {
+        int rowModel = jTBfilePaths.convertRowIndexToModel( rowsView[ 0] );
+
+        reference = tmFilePaths.getAtRow( rowModel );
+
+        jLBLreference.setText( String.format( "copy reference is '%s'" ,
+                                              reference.getFP().getName() ) );
+    }
+
+    private void pasteForced( final int[] rowsView )
+    {
+        new PopupDialog( this ,
+                         new ModalTaskPopup( this ,
+                                             "Forced paste" ,
+                                             null )
+        {
+            @Override
+            public void run()
+            {
+                try
+                {
+                    for ( int rowView : rowsView )
+                    {
+                        int rowModel = jTBfilePaths.convertRowIndexToModel( rowView );
+                        FilePathTableModel.FilePathLine fpl = tmFilePaths.getAtRow( rowModel );
+
+                         tmFilePaths.setDescriptionCreatedDate( reference.getFP().getDescription().getCreatedDate() ,
+                                                         fpl );
+                        
+                        fpl.getFP().getDescription().setGPSlat( reference.getFP().getDescription().getGPSlat() );
+                        fpl.getFP().getDescription().setGPSlng( reference.getFP().getDescription().getGPSlng() );
+                        fpl.getFP().getDescription().setMake( reference.getFP().getDescription().getMake() );
+                        fpl.getFP().getDescription().setModel( reference.getFP().getDescription().getModel() );
+                        fpl.getFP().getDescription().setPerson( reference.getFP().getDescription().getPerson() );
+                        fpl.getFP().getDescription().setPlace( reference.getFP().getDescription().getPlace() );
+
+                        tmFilePaths.setDescriptionTitle( reference.getFP().getDescription().getTitle() ,
+                                                         fpl );
+
+                        fpl.getFP().getDescription().setUpdated( true );
+
+                        ContentDAOmanager.getInstance().updateDescription( fpl.getFP().getDescription() );
+                    }
+
+                    tmFilePaths.fireTableDataChanged();
+                }
+                catch( Throwable th )
+                {
+                    logger.error( th.getMessage() ,
+                                  th );
+                }
+            }
+        } ).setVisible( true );
+    }
+
+    private void pasteFilled( final int[] rowsView )
+    {
+        new PopupDialog( this ,
+                         new ModalTaskPopup( this ,
+                                             "Filled paste" ,
+                                             null )
+        {
+            @Override
+            public void run()
+            {
+                try
+                {
+                    for ( int rowView : rowsView )
+                    {
+                        int rowModel = jTBfilePaths.convertRowIndexToModel( rowView );
+                        FilePathTableModel.FilePathLine fpl = tmFilePaths.getAtRow( rowModel );
+
+                        boolean updated = false;
+                        if ( fpl.getFP().getDescription().getCreatedDate() == null )
+                        {
+                            tmFilePaths.setDescriptionCreatedDate( reference.getFP().getDescription().getCreatedDate() ,
+                                                             fpl );
+
+                            updated = true;
+                        }
+
+
+                        if ( fpl.getFP().getDescription().getGPSlat() == null && fpl.getFP().getDescription().getGPSlng() == null && fpl.
+                                getFP().getDescription().getPlace() == null )
+                        {
+                            fpl.getFP().getDescription().setGPSlat( reference.getFP().getDescription().getGPSlat() );
+                            fpl.getFP().getDescription().setGPSlng( reference.getFP().getDescription().getGPSlng() );
+                            fpl.getFP().getDescription().setPlace( reference.getFP().getDescription().getPlace() );
+
+                            updated = true;
+                        }
+
+                        if ( fpl.getFP().getDescription().getPerson() == null )
+                        {
+                            fpl.getFP().getDescription().setPerson( reference.getFP().getDescription().getPerson() );
+
+                            updated = true;
+                        }
+
+                        if ( fpl.getFP().getDescription().getTitle() == null
+                             || fpl.getFP().getDescription().getTitle().length() <= 0 )
+                        {
+                            tmFilePaths.setDescriptionTitle( reference.getFP().getDescription().getTitle() ,
+                                                             fpl );
+
+                            updated = true;
+                        }
+
+                        if ( updated )
+                        {
+                            fpl.getFP().getDescription().setUpdated( true );
+                        }
+
+                        ContentDAOmanager.getInstance().updateDescription( fpl.getFP().getDescription() );
+                    }
+
+                    tmFilePaths.fireTableDataChanged();
+                }
+                catch( Throwable th )
+                {
+                    logger.error( th.getMessage() ,
+                                  th );
+                }
+            }
+        } ).setVisible( true );
+    }
+
+    private void deleteAllDescriptions()
+    {
+        if ( getConfirm( "Do you confirm ?" ) )
+        {
+            SwingUtilities.invokeLater( new Runnable()
+            {
+                public void run()
+                {
+                    try
+                    {
+                        ContentDAOmanager.getInstance().deleteAllDescriptions();
+                        tmFilePaths.clear();
+                    }
+                    catch( Throwable th )
+                    {
+                        logger.error( th.getMessage() ,
+                                      th );
+                    }
+                }
+            } );
+        }
+    }
+    
+    private void save()
+    {
+        new PopupDialog( this,
+                         new ModalTaskPopup( this,
+                                             "Apply changes",
+                                             null) {
+            @Override
+            public void run()
+            {
+                List<Description> descriptions = ContentDAOmanager.getInstance().getAllDescriptionsUpdated();
+                for ( Description description : descriptions )
+                {
+                }
+            }
+        }).setVisible( true );
     }
 }

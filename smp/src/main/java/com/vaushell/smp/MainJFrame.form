@@ -17,6 +17,34 @@
                 <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jMIimportActionPerformed"/>
               </Events>
             </MenuItem>
+            <MenuItem class="javax.swing.JMenuItem" name="jMIsave">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Apply changes"/>
+              </Properties>
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jMIsaveActionPerformed"/>
+              </Events>
+            </MenuItem>
+            <MenuItem class="javax.swing.JPopupMenu$Separator" name="jSeparator1">
+            </MenuItem>
+            <MenuItem class="javax.swing.JMenuItem" name="jMIreset">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Reset files"/>
+              </Properties>
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jMIresetActionPerformed"/>
+              </Events>
+            </MenuItem>
+            <MenuItem class="javax.swing.JPopupMenu$Separator" name="jSeparator2">
+            </MenuItem>
+            <MenuItem class="javax.swing.JMenuItem" name="jMIclose">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Close"/>
+              </Properties>
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jMIcloseActionPerformed"/>
+              </Events>
+            </MenuItem>
           </SubComponents>
         </Menu>
         <Menu class="javax.swing.JMenu" name="jMNwindow">
@@ -96,28 +124,30 @@
             <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jBTshowPlaceViewerActionPerformed"/>
           </Events>
         </Component>
-        <Component class="javax.swing.JButton" name="jBTsyncGPSplaces">
+        <Component class="javax.swing.JToolBar$Separator" name="jSeparator3">
+        </Component>
+        <Component class="javax.swing.JToggleButton" name="jBTshowEmpty">
           <Properties>
             <Property name="icon" type="javax.swing.Icon" editor="org.netbeans.modules.form.editors2.IconEditor">
-              <Image iconType="3" name="/com/vaushell/smp/icons/btSync.png"/>
+              <Image iconType="3" name="/com/vaushell/smp/icons/btViewEmpty.png"/>
             </Property>
-            <Property name="text" type="java.lang.String" value="GPS &gt; Places"/>
-            <Property name="toolTipText" type="java.lang.String" value="Find places within GPS coordinate"/>
+            <Property name="text" type="java.lang.String" value="View empty"/>
+            <Property name="toolTipText" type="java.lang.String" value="View empty"/>
           </Properties>
           <Events>
-            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jBTsyncGPSplacesActionPerformed"/>
+            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jBTshowEmptyActionPerformed"/>
           </Events>
         </Component>
-        <Component class="javax.swing.JButton" name="jBTsyncPlacesGPS">
+        <Component class="javax.swing.JToggleButton" name="jBTshowGroup">
           <Properties>
             <Property name="icon" type="javax.swing.Icon" editor="org.netbeans.modules.form.editors2.IconEditor">
-              <Image iconType="3" name="/com/vaushell/smp/icons/btSync.png"/>
+              <Image iconType="3" name="/com/vaushell/smp/icons/btViewGroup.png"/>
             </Property>
-            <Property name="text" type="java.lang.String" value="GPS &gt; Places"/>
-            <Property name="toolTipText" type="java.lang.String" value="Copy places to wrong GPS coordinate"/>
+            <Property name="text" type="java.lang.String" value="View group"/>
+            <Property name="toolTipText" type="java.lang.String" value="View group"/>
           </Properties>
           <Events>
-            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jBTsyncPlacesGPSActionPerformed"/>
+            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jBTshowGroupActionPerformed"/>
           </Events>
         </Component>
         <Container class="javax.swing.JPanel" name="jPNLtbEmpty">
@@ -143,8 +173,6 @@
             <Property name="model" type="javax.swing.table.TableModel" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
               <Connection code="tmFilePaths" type="code"/>
             </Property>
-            <Property name="autoResizeMode" type="int" value="4"/>
-            <Property name="columnControlVisible" type="boolean" value="true"/>
           </Properties>
         </Component>
       </SubComponents>
@@ -158,13 +186,23 @@
 
       <Layout class="org.netbeans.modules.form.compat2.layouts.DesignGridBagLayout"/>
       <SubComponents>
+        <Component class="javax.swing.JLabel" name="jLBLreference">
+          <Properties>
+            <Property name="text" type="java.lang.String" value="no copy reference"/>
+          </Properties>
+          <Constraints>
+            <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignGridBagLayout" value="org.netbeans.modules.form.compat2.layouts.DesignGridBagLayout$GridBagConstraintsDescription">
+              <GridBagConstraints gridX="-1" gridY="-1" gridWidth="1" gridHeight="1" fill="0" ipadX="0" ipadY="0" insetsTop="0" insetsLeft="10" insetsBottom="0" insetsRight="10" anchor="13" weightX="1.0" weightY="0.0"/>
+            </Constraint>
+          </Constraints>
+        </Component>
         <Component class="javax.swing.JLabel" name="jLBLfilePathsCount">
           <Properties>
             <Property name="text" type="java.lang.String" value="no record found"/>
           </Properties>
           <Constraints>
             <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignGridBagLayout" value="org.netbeans.modules.form.compat2.layouts.DesignGridBagLayout$GridBagConstraintsDescription">
-              <GridBagConstraints gridX="-1" gridY="-1" gridWidth="1" gridHeight="1" fill="0" ipadX="0" ipadY="0" insetsTop="0" insetsLeft="0" insetsBottom="0" insetsRight="10" anchor="13" weightX="1.0" weightY="0.0"/>
+              <GridBagConstraints gridX="-1" gridY="-1" gridWidth="1" gridHeight="1" fill="0" ipadX="0" ipadY="0" insetsTop="0" insetsLeft="10" insetsBottom="0" insetsRight="10" anchor="13" weightX="0.0" weightY="0.0"/>
             </Constraint>
           </Constraints>
         </Component>
